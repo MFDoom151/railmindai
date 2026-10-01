@@ -1,7 +1,7 @@
 // Макро-уровень: сеть КТЖ на подложке-фотографии карты-схемы + тепловая карта загруженности (Canvas 2D).
 // Координаты — в пикселях фотографии (см. netdata.js). Станции кейса и участки между ними живые (загрузка с бэкенда),
 // остальная сеть моделируется как фон: по всем ходам идёт имитация движения поездов.
-import { stName, t } from './i18n.js';
+import { stName, t, getLang } from './i18n.js';
 import { IMG, STN_PX, SEC_PATH, RAIL } from './netdata.js';
 
 const COL = { green: '#1f9d6b', yellow: '#e0a21a', red: '#d6453d' };
@@ -123,6 +123,12 @@ export class KzMap {
     const sc = this.view.s, k = this.base * sc;
     if (this.imgOk) {
       const [x0, y0] = this.tx(0, 0); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(this.img, x0, y0, W_W * k, W_H * k);
+      if (getLang() !== 'ru') {                                       // заголовок на самой фотографии русский — закрываем подписью на языке интерфейса
+        const [cx, cy] = this.tx(205, 22); ctx.fillStyle = '#b7dcf7'; ctx.fillRect(cx, cy, 870 * k, 52 * k);
+        ctx.textBaseline = 'middle'; ctx.fillStyle = '#244f8f'; ctx.textAlign = 'center'; ctx.font = `800 ${30 * k}px "Segoe UI", sans-serif`;
+        const [tx0, ty0] = this.tx(650, 47); ctx.fillText(t('map_title'), tx0, ty0);
+        ctx.font = `700 ${16 * k}px "Segoe UI", sans-serif`; const [sx0, sy0] = this.tx(1010, 50); ctx.fillStyle = '#2a6cb3'; ctx.fillText(t('map_title_sub'), sx0, sy0); ctx.textBaseline = 'alphabetic';
+      }
       if (this.mode === 'heat') { ctx.fillStyle = 'rgba(255,255,255,.38)'; ctx.fillRect(x0, y0, W_W * k, W_H * k); }   // приглушить подложку, чтобы тепловая карта читалась
     }
     const byId = Object.fromEntries(this.stations.map(s => [s.id, s]));

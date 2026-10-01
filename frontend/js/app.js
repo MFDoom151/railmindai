@@ -22,6 +22,7 @@ async function api(path, body) {
   if (!r.ok) throw new Error(path + ' ' + r.status);
   return r.json();
 }
+const LOC = () => ({ ru: 'ru-RU', kz: 'kk-KZ', en: 'en-GB' })[getLang()] || 'ru-RU';       // дата и время — на языке интерфейса
 const fmtMin = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
 
 // ===================== сеть / карта =====================
@@ -168,7 +169,7 @@ function badgeFor(st) { return st === 'fault' || st === 'alarm' ? 'crit' : st ==
 function onPick(item) {
   if (item.type === 'camera') { openCctv(item.cam); return; }
   const info = S.scene.sensorInfo(item); const box = $('#pickCard'); box.style.display = '';
-  const rows = [[t('sn_since'), new Date(info.since).toLocaleTimeString('ru-RU')]];
+  const rows = [[t('sn_since'), new Date(info.since).toLocaleTimeString(LOC())]];
   if (info.type === 'switch') rows.unshift([t('rs_ROUTE_s') + ' / №', `${info.ref} (${S.scene.sw[info.ref].pos})`]); else rows.unshift([t('station') + ' · №', info.track]);
   box.innerHTML = `<div style="display:flex;justify-content:space-between"><h4>${info.id}</h4><button class="btn sm" id="pickX" style="padding:0 7px">×</button></div>
     <div class="lbl" style="margin-bottom:6px">${t('sn_' + info.type)}</div><span class="badge ${badgeFor(info.state)}">${t('sn_' + info.state)}</span>
@@ -183,7 +184,7 @@ function openCctv(cam) {
   const modal = $('#cctvModal'); modal.classList.add('on'); cctvFrozen = false; $('#cctvFreeze').textContent = t('cctv_snap');
   $('#cctvTitle').textContent = `${cam.id} · ${t('z_' + cam.zone)} · ${stName(S.net.stations.find(x => x.id === S.st.id))}`; $('#cctvId').textContent = `${cam.id}  ${t('z_' + cam.zone).toUpperCase()}`;
   const canvas = $('#cctvCanvas');
-  const tick = () => { if (!cctvFrozen) { try { S.scene.renderCamera(cam.id, canvas); } catch (e) { console.warn(e); } } $('#cctvTime').textContent = new Date().toLocaleString('ru-RU'); };
+  const tick = () => { if (!cctvFrozen) { try { S.scene.renderCamera(cam.id, canvas); } catch (e) { console.warn(e); } } $('#cctvTime').textContent = new Date().toLocaleString(LOC()); };
   tick(); clearInterval(cctvTimer); cctvTimer = setInterval(tick, 200);
 }
 function closeCctv() { $('#cctvModal').classList.remove('on'); clearInterval(cctvTimer); cctvTimer = null; }
@@ -443,7 +444,7 @@ function evText(e) { const p = { ...e.params }; if (p.shoes) p.shoes = '№' + p
 function renderFeed() {
   const all = [...S.backendLog.map(e => ({ ts: e.ts, level: e.level, text: evText(e), station: e.station })), ...S.local].sort((a, b) => b.ts - a.ts).slice(0, 40);
   const stn = (id) => { const s = S.net && S.net.stations.find(x => x.id === id); return s ? stName(s) : ''; };
-  const html = all.length ? all.map(e => `<div class="ev ${e.level}"><span class="tm num">${new Date(e.ts * 1000).toLocaleTimeString('ru-RU')}</span><span><b style="color:var(--accent-2)">${stn(e.station)}</b> ${e.text}</span></div>`).join('') : `<div class="lbl" style="padding:6px">${t('saf_none')}</div>`;
+  const html = all.length ? all.map(e => `<div class="ev ${e.level}"><span class="tm num">${new Date(e.ts * 1000).toLocaleTimeString(LOC())}</span><span><b style="color:var(--accent-2)">${stn(e.station)}</b> ${e.text}</span></div>`).join('') : `<div class="lbl" style="padding:6px">${t('saf_none')}</div>`;
   $$('.feed').forEach(f => f.innerHTML = html);
 }
 async function renderShoes() {
@@ -529,11 +530,18 @@ $('#btnAI2').onclick = runAI; $('#btnAIreset').onclick = resetAI; $('#btnHostile
 $$('.langs button').forEach(b => { b.onclick = () => setLang(b.dataset.lang); });
 function markLang() { try { showHint(S.view); renderUserChip(); $('#demoBar').title = t('sandbox_h'); } catch (e) {} $$('.langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === getLang())); }
 document.addEventListener('langchange', () => {
-  if (S.dash) S.dash.relabel(); try { renderLgChart(); } catch (e) {}
+  if (S.dash) S.dash.relabel(); try { renderLgChart(); renderDemoList(); } catch (e) {}
   markLang(); renderLegend(); renderNetList(); updateProbBtn(); renderProfile(); renderDisButtons(); renderHot(); if (S.st) { fillStationSelect(); renderShoes(); } renderAI(); applyParams(); renderFeed(); renderLayerInfo();
   renderResources(S.tel); if (S.dis) renderDisResult(); if (S.lastSim) renderSim(); for (const k in S.fc) drawForecast(k, S.fc[k]);
 });
-setInterval(() => { $('#clock').textContent = new Date().toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'medium' }); }, 1000);
+const KZ_MONTH = ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым', 'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан'];
+const fmtDT = (d) => getLang() === 'kz'
+  ? `${d.getDate()} ${KZ_MONTH[d.getMonth()]} ${d.getFullYear()}, ${d.toLocaleTimeString('en-GB')}`      // браузерный kk-KZ даёт «2026 M10 1», поэтому месяц собираем сами
+  : d.toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'medium' });
+setInterval(() => { $('#clock').textContent = fmtDT(new Date()); }, 1000);
+// компактный режим для низких экранов (ноутбуки 1366×768): меньше «рамки», больше места под схему
+const fitCompact = () => document.documentElement.classList.toggle('compact', window.innerHeight < 860);
+window.addEventListener('resize', fitCompact); fitCompact();
 window.addEventListener('resize', resizeCharts);
 
 // ===================== запуск =====================
@@ -548,10 +556,15 @@ const U = {
   user() { try { return JSON.parse(sessionStorage.getItem('rt_user') || 'null'); } catch (e) { return null; } },
   token() { try { return sessionStorage.getItem('rt_tok'); } catch (e) { return null; } },
 };
+const dspName = (u) => {                                   // «Диспетчер ст. X» на языке интерфейса (станция берётся из списка станций)
+  if (!u) return '';
+  const st = (S.stList || []).find(x => x.id === u.station);
+  return u.role === 'dispatcher' && st ? t('u_dsp', { st: stName(st) }) : (u.name || u.user);
+};
 const ROLE_RU = { dispatcher: 'd_role_dispatcher', admin: 'd_role_admin', viewer: 'd_role_viewer' };
 function renderUserChip() {
   const u = U.user(), tok = U.token();
-  $('#uName').textContent = tok && u ? u.name || u.user : t('u_guest');
+  $('#uName').textContent = tok && u ? dspName(u) : t('u_guest');
   $('#uRole').textContent = tok && u ? t(ROLE_RU[u.role] || 'd_role_viewer') : '';
   $('#uRole').style.display = tok && u ? '' : 'none';
   $('#uBtn').textContent = tok ? t('u_signout') : t('u_signin');
@@ -578,7 +591,7 @@ function renderLgChart() {
   const fail = base.map((v, i) => hrs[i] < 10 ? v : Math.max(38, v - 52 * (1 - Math.exp(-(hrs[i] - 10) * 1.3)) + (hrs[i] > 15 ? (hrs[i] - 15) * 1.6 : 0)));
   const fix = base.map((v, i) => hrs[i] < 10 ? v : (hrs[i] < 10.5 ? v - 34 * (1 - (hrs[i] - 10) / 0.5 * 0.75) : v - 9 * Math.exp(-(hrs[i] - 10.5) * 0.9)));
   c.setOption({
-    animationDuration: 1400, grid: { left: 34, right: 12, top: 40, bottom: 26 },
+    animationDuration: 1400, grid: { left: 34, right: 26, top: 40, bottom: 26 },
     legend: { top: 0, left: 0, itemWidth: 14, itemHeight: 3, textStyle: { color: '#3b4f68', fontSize: 11.5 } },
     tooltip: { trigger: 'axis', valueFormatter: (v) => v.toFixed(0) },
     xAxis: { type: 'category', data: lab, boundaryGap: false, axisLabel: { color: '#667a93', interval: 3 }, axisLine: { lineStyle: { color: '#c3d1e2' } } },
@@ -591,16 +604,17 @@ function renderLgChart() {
   }, true);
   setTimeout(() => c.resize(), 60);
 }
+let demoUsers = [];
+function renderDemoList() {
+  $('#lgDemo').style.display = demoUsers.length ? '' : 'none';
+  $('#lgDemoList').innerHTML = demoUsers.map(u => `<div class="lg-demo-row"><div><b>${dspName({ role: 'dispatcher', station: u.station, name: u.name, user: u.user })}</b><br><span class="mono">${u.user} / ${u.password}</span></div><button type="button" class="btn sm" data-u="${u.user}" data-p="${u.password}">${t('lg_demo_use')}</button></div>`).join('');
+  $$('#lgDemoList button').forEach(b => b.onclick = () => { $('#lgUser').value = b.dataset.u; $('#lgPass').value = b.dataset.p; $('#lgForm').requestSubmit(); });
+}
 async function initLanding() {
-  renderUserChip(); renderLgChart(); window.addEventListener('resize', () => { try { window.echarts.getInstanceByDom($('#lgChart')).resize(); } catch (e) {} });
-  try {
-    const i = await (await fetch('/api/v1/auth/info')).json();
-    if (i.demo_users && i.demo_users.length) {
-      $('#lgDemo').style.display = '';
-      $('#lgDemoList').innerHTML = i.demo_users.map(u => `<div class="lg-demo-row"><div><b>${u.name}</b><br><span class="mono">${u.user} / ${u.password}</span></div><button type="button" class="btn sm" data-u="${u.user}" data-p="${u.password}">${t('lg_demo_use')}</button></div>`).join('');
-      $$('#lgDemoList button').forEach(b => b.onclick = () => { $('#lgUser').value = b.dataset.u; $('#lgPass').value = b.dataset.p; $('#lgForm').requestSubmit(); });
-    }
-  } catch (e) { /* без демо-списка */ }
+  renderLgChart(); window.addEventListener('resize', () => { try { window.echarts.getInstanceByDom($('#lgChart')).resize(); } catch (e) {} });
+  try { S.stList = await (await fetch('/api/v1/stations')).json(); } catch (e) { S.stList = []; }
+  renderUserChip();
+  try { const i = await (await fetch('/api/v1/auth/info')).json(); demoUsers = i.demo_users || []; renderDemoList(); } catch (e) { /* без демо-списка */ }
 }
 initLanding();
 

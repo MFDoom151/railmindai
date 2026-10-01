@@ -306,7 +306,7 @@ function togglePlay() {
 // вход и настройки
 function renderAuth() {
   const r = D.auth.role; $('#dRole').textContent = r === 'viewer' ? t('d_login') : `${D.auth.user} · ${t('d_role_' + r)}`;
-  $('#dAuth').title = D.auth.open ? t('d_open_demo') : '';
+  $('#dAuth').title = D.auth.open ? t('d_open_demo') : ''; $('#dAuth').style.display = r === 'viewer' ? '' : 'none';   // вошедший видит себя в шапке, дубль не нужен
   $('#aLogout').style.display = r === 'viewer' ? 'none' : ''; $('#aGo').style.display = r === 'viewer' ? '' : 'none';
 }
 async function openAuth() {
