@@ -1,0 +1,16 @@
+# docker compose up --build            → пульт на http://localhost:8000  (документация API: /docs, метрики: /metrics)
+# docker compose --profile demo up     → дополнительно запускает внешнего «датчика» (WS ingest) для демонстрации приёма данных
+services:
+  app:
+    build: .
+    ports: ["8000:8000"]
+    env_file: [.env]
+    volumes: ["./data:/app/backend/data"]        # история SQLite и override-конфиг переживают перезапуск
+    restart: unless-stopped
+  sensor:
+    profiles: ["demo"]
+    build: .
+    depends_on: { app: { condition: service_healthy } }
+    env_file: [.env]
+    working_dir: /app
+    command: sh -c "python tools/ws_client_demo.py --host app --station otar --seconds 120 --user $${RAILTWIN_DISPATCHER_USER:-dispatcher} --password $${RAILTWIN_DISPATCHER_PASSWORD:-dispatcher}"

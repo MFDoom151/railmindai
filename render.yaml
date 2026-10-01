@@ -1,0 +1,22 @@
+# Render Blueprint: New → Blueprint → выбрать репозиторий. Секреты генерируются автоматически.
+services:
+  - type: web
+    name: railtwin-digital-station
+    runtime: docker
+    plan: free            # для комфортного CP-SAT лучше starter (0.5 CPU → 1 CPU)
+    healthCheckPath: /health
+    envVars:
+      - key: RAILTWIN_DEV
+        value: "0"
+      - key: RAILTWIN_OPEN_DEMO          # посетитель без входа = диспетчер (для жюри)
+        value: "1"
+      - key: RAILTWIN_SECRET
+        generateValue: true
+      - key: RAILTWIN_ADMIN_USER
+        value: admin
+      - key: RAILTWIN_ADMIN_PASSWORD
+        generateValue: true               # смотреть в Dashboard → Environment
+      - key: RAILTWIN__planner__workers
+        value: "2"
+      - key: RAILTWIN__planner__time_limit_s
+        value: "1.5"

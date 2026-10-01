@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.woff2 binary
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.png binary
+*.jpg binary
+*.glb binary

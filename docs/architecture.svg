@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5b8fc9"/></marker>
+    <style>
+      .box{fill:#141c27;stroke:#34465c;stroke-width:1.4;rx:8}
+      .core{fill:#18263a;stroke:#5b8fc9}
+      .ai{fill:#1b2b24;stroke:#4aa37a}
+      .store{fill:#2a2418;stroke:#cf9a3a}
+      .t{fill:#dde4ed;font-size:15px;font-weight:600}
+      .s{fill:#8b99ab;font-size:12px}
+      .h{fill:#7aa7d9;font-size:12px;font-weight:700;letter-spacing:.08em}
+      .l{stroke:#5b8fc9;stroke-width:1.6;fill:none;marker-end:url(#a)}
+      .d{stroke:#cf9a3a;stroke-dasharray:5 4}
+    </style>
+  </defs>
+  <rect width="1200" height="640" fill="#0e141c"/>
+  <text x="24" y="34" class="t" style="font-size:19px">«Цифровая станция» — архитектура</text>
+  <text x="24" y="54" class="s">Модульный монолит: каждый блок — отдельный модуль с чётким интерфейсом; шина событий и планировщик выносятся в сервисы без изменения логики</text>
+
+  <text x="24" y="92" class="h">ИСТОЧНИКИ ДАННЫХ</text>
+  <rect class="box" x="24" y="102" width="230" height="86"/><text x="40" y="132" class="t">Симулятор станции</text><text x="40" y="152" class="s">исполняет план, нештатные ситуации,</text><text x="40" y="168" class="s">шум канала: дубли, потери, порядок</text>
+  <rect class="box" x="24" y="206" width="230" height="86"/><text x="40" y="236" class="t">Внешние датчики / симулятор</text><text x="40" y="256" class="s">WS /ws/v1/ingest, POST /api/v1/ingest</text><text x="40" y="272" class="s">(роль dispatcher)</text>
+
+  <text x="300" y="92" class="h">ПРИЁМ И НОРМАЛИЗАЦИЯ</text>
+  <rect class="box core" x="300" y="102" width="250" height="190"/><text x="316" y="132" class="t">Ingest</text>
+  <text x="316" y="156" class="s">• валидация схемы и значений</text><text x="316" y="174" class="s">• дедупликация (окно, seq)</text><text x="316" y="192" class="s">• буфер переупорядочивания по ts</text><text x="316" y="210" class="s">• отбраковка устаревших событий</text><text x="316" y="228" class="s">• сглаживание EMA (координата, скорость)</text><text x="316" y="252" class="s">счётчики: received / invalid / dup / stale</text><text x="316" y="270" class="s">→ /metrics, индикатор канала в UI</text>
+
+  <text x="600" y="92" class="h">СОСТОЯНИЕ И АНАЛИТИКА</text>
+  <rect class="box core" x="600" y="102" width="270" height="86"/><text x="616" y="132" class="t">Состояние станции</text><text x="616" y="152" class="s">поезда, пути, ресурсы, закрытия —</text><text x="616" y="168" class="s">только из нормализованных событий</text>
+  <rect class="box core" x="600" y="206" width="130" height="86"/><text x="612" y="236" class="t">Конфликты</text><text x="612" y="256" class="s">9 типов +</text><text x="612" y="272" class="s">решения</text>
+  <rect class="box core" x="740" y="206" width="130" height="86"/><text x="752" y="236" class="t">Индекс</text><text x="752" y="256" class="s">0–100, A–E,</text><text x="752" y="272" class="s">топ-5 факторов</text>
+
+  <text x="600" y="330" class="h">ИИ-ПЛАНИРОВАНИЕ</text>
+  <rect class="box ai" x="600" y="340" width="270" height="150"/><text x="616" y="368" class="t">Планировщик</text>
+  <text x="616" y="392" class="s">OR-Tools CP-SAT: пути, локомотивы, бригады,</text><text x="616" y="408" class="s">горловины, сортир. пути, окна ТО, приоритеты</text><text x="616" y="428" class="s">+ списочная эвристика (миллисекунды)</text><text x="616" y="448" class="s">2–5 альтернатив параллельно, время и</text><text x="616" y="464" class="s">влияние на индекс по каждой</text>
+
+  <text x="920" y="92" class="h">ДОСТАВКА И ИНТЕРФЕЙС</text>
+  <rect class="box" x="920" y="102" width="256" height="86"/><text x="936" y="132" class="t">Шина событий (pub/sub)</text><text x="936" y="152" class="s">темы: state · plan · conflicts ·</text><text x="936" y="168" class="s">alternatives · alert; очередь на клиента</text>
+  <rect class="box" x="920" y="206" width="256" height="86"/><text x="936" y="236" class="t">WebSocket / SSE</text><text x="936" y="256" class="s">≥ 2 Гц, backfill, ping/pong, heartbeat,</text><text x="936" y="272" class="s">отбрасывание старых кадров медленным клиентам</text>
+  <rect class="box" x="920" y="310" width="256" height="180"/><text x="936" y="340" class="t">Пульт диспетчера (SPA)</text>
+  <text x="936" y="364" class="s">схема станции (SVG), диаграмма движения,</text><text x="936" y="380" class="s">индекс и факторы, конфликты, рекомендации,</text><text x="936" y="396" class="s">сбои и альтернативы, перемотка 15 мин,</text><text x="936" y="412" class="s">reconnect + backoff, «нет связи»,</text><text x="936" y="428" class="s">RU / KZ / EN, отчёты PDF/CSV</text>
+
+  <text x="24" y="330" class="h">ХРАНЕНИЕ, КОНФИГУРАЦИЯ, БЕЗОПАСНОСТЬ</text>
+  <rect class="box store" x="24" y="340" width="230" height="86"/><text x="40" y="370" class="t">SQLite (история 72 ч)</text><text x="40" y="390" class="s">снимки, события, планы; фоновая запись,</text><text x="40" y="406" class="s">очистка по сроку хранения</text>
+  <rect class="box store" x="300" y="340" width="250" height="86"/><text x="316" y="370" class="t">Конфигурация (YAML)</text><text x="316" y="390" class="s">индекс, ограничения, параметры решателя;</text><text x="316" y="406" class="s">PUT /config (admin), горячее применение</text>
+  <rect class="box" x="24" y="444" width="230" height="86"/><text x="40" y="474" class="t">Аутентификация</text><text x="40" y="494" class="s">viewer · dispatcher · admin, токены HMAC,</text><text x="40" y="510" class="s">секреты — из переменных окружения</text>
+  <rect class="box" x="300" y="444" width="250" height="86"/><text x="316" y="474" class="t">Наблюдаемость</text><text x="316" y="494" class="s">/health /ready /metrics (Prometheus),</text><text x="316" y="510" class="s">JSON-логи, лаг цикла событий, p95 задержки</text>
+
+  <path class="l" d="M254,145 L300,145"/><path class="l" d="M254,249 L280,249 L280,170 L300,170"/>
+  <path class="l" d="M550,145 L600,145"/>
+  <path class="l" d="M735,188 L735,206" /><path class="l" d="M665,188 L665,206"/>
+  <path class="l" d="M735,292 L735,340"/>
+  <path class="l d" d="M870,415 L920,415" style="marker-start:url(#a);marker-end:none"/>
+  <path class="l" d="M870,145 L920,145"/><path class="l" d="M1048,188 L1048,206"/><path class="l" d="M1048,292 L1048,310"/>
+  <path class="l d" d="M254,383 L300,383" style="marker-end:none"/>
+  <path class="l" d="M600,420 L560,420 L560,360 L550,360" style="stroke:#cf9a3a;marker-end:none"/>
+  <path class="l" d="M870,440 L900,440 L900,290 L870,290" style="stroke:#4aa37a"/>
+
+  <text x="24" y="580" class="s">Поток: событие → Ingest → Состояние → Конфликты/Индекс → (при необходимости) Планировщик → План → Шина → WebSocket → Пульт. Нештатная ситуация обходит такт и запускает расчёт альтернатив немедленно.</text>
+  <text x="24" y="600" class="s">Цель по задержке: событие → видимое обновление плана &lt; 500 мс (быстрый вариант за единицы миллисекунд), финальные CP-SAT-варианты — за 1–2 с.</text>
+</svg>

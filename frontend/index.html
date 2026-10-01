@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KTZ RailTwin KZ</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/dash.css">
+<script src="vendor/echarts.min.js"></script>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="brand">
+    <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M6 21 9.5 3M18 21 14.5 3M7.5 9h9M6.7 14h10.6M5.8 19h12.4"/></svg></div>
+    <div><h1 data-i18n="title"></h1><div class="sub" data-i18n="sub"></div></div>
+  </div>
+  <div class="status"><span class="pill"><i></i><span data-i18n="st_synth"></span></span></div>
+  <div class="kpis" id="kpis">
+    <div class="kpi"><div class="v num"><span id="kEff">–</span><small>/100</small> <span id="kLetter" class="kletter"></span></div><div class="l" id="kIdxL" data-i18n="kpi_index"></div></div>
+    <div class="kpi"><div class="v num"><span id="kDwell">0</span></div><div class="l" data-i18n="kpi_conf"></div></div>
+    <div class="kpi"><div class="v num"><span id="kPrev">–</span><small id="kPrevN" style="margin-left:6px"></small></div><div class="l" data-i18n="kpi_plan"></div></div>
+  </div>
+  <div class="hdr-r">
+    <div class="langs"><button data-lang="ru">RU</button><button data-lang="kz">KZ</button><button data-lang="en">EN</button></div>
+    <div id="clock" class="num"></div>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="tabs"><button id="tabD" class="tab on" data-i18n="tab_dash"></button><button id="tabA" class="tab" data-i18n="tab_a"></button><button id="tabB" class="tab" data-i18n="tab_b"></button></div>
+  <div class="demo" id="demoBar">
+    <button id="btnSim" class="btn primary" data-i18n="demo_sim"></button>
+    <button id="btnProb" class="btn danger"></button>
+    <button id="btnAI" class="btn ok" data-i18n="demo_ai"></button>
+  </div>
+</nav>
+
+<main>
+  <!-- ================= ПУЛЬТ ДИСПЕТЧЕРА · ЦИФРОВАЯ СТАНЦИЯ ================= -->
+  <section id="viewD" class="view dview">
+    <div class="panel dbar">
+      <div class="dg"><span class="lbl" data-i18n="d_station"></span><select id="dStation" class="sel"></select></div>
+      <div id="dConn" class="conn"><i></i><span id="dConnTxt"></span></div>
+      <div class="dg"><span class="lbl" data-i18n="d_sim_time"></span><b class="num" id="dSimTime">--:--</b></div>
+      <div class="dg"><span class="lbl" data-i18n="d_speed"></span><div class="seg" id="dSpeed"><button data-s="0.5">×0.5</button><button data-s="1" class="on">×1</button><button data-s="2">×2</button><button data-s="4">×4</button></div>
+        <button class="btn sm" id="dPause" data-i18n="d_pause"></button></div>
+      <label class="chk"><input type="checkbox" id="dAuto"><span data-i18n="d_auto_apply"></span></label>
+      <div class="sp"></div>
+      <div class="dg" id="dIngest" title=""><span class="lbl" data-i18n="d_ingest"></span><span class="lbl num" id="dIngestTxt"></span></div>
+      <div class="dg"><button class="btn sm" id="dPdf">PDF</button><button class="btn sm" id="dCsv">CSV</button></div>
+      <button class="btn sm" id="dSettings" data-i18n="d_settings"></button>
+      <button class="btn sm" id="dAuth"><span id="dRole"></span></button>
+    </div>
+    <div id="dBanner" class="rbanner" style="display:none"></div>
+    <div class="dgrid">
+      <div class="panel d-index"><div class="ph"><h3 data-i18n="d_index_title"></h3></div><div id="dIndex" class="idx-body"></div><div class="lbl" id="dThrNote" style="padding:0 14px 4px;font-size:11px"></div>
+        <div class="ph" style="padding-top:2px"><h3 data-i18n="d_res"></h3></div><div id="dRes" class="res-mini"></div></div>
+      <div class="panel d-scheme"><div class="ph"><h3 data-i18n="d_scheme"></h3><div class="chips"><span class="chip c-freight">▬ <span data-i18n="tt_freight"></span></span><span class="chip c-passenger">▬ <span data-i18n="tt_passenger"></span></span><span class="chip c-transit">▬ <span data-i18n="tt_transit"></span></span></div></div>
+        <div id="dScheme" class="scheme-host"></div><div id="dTrain" class="traincard" style="display:none"></div></div>
+      <div class="panel d-alerts"><div class="ph"><h3 data-i18n="d_alerts"></h3><span class="badge mu num" id="dConfN"></span></div><div id="dAlerts" class="scroll"></div></div>
+      <div class="panel d-diagram"><div class="ph"><h3 data-i18n="d_diagram"></h3>
+          <div class="chips"><span class="chip"><i class="sq" style="background:rgba(91,143,201,.25);border:1px solid #5b8fc9"></i><span data-i18n="d_dg_planned"></span></span><span class="chip"><i class="sq" style="background:#5b8fc9"></i><span data-i18n="d_dg_actual"></span></span><span class="chip"><i class="sq" style="background:#e0645f"></i><span data-i18n="d_dg_late"></span></span><span class="chip"><i class="sq" style="background:#cf9a3a"></i><span data-i18n="d_dg_closed"></span></span>
+          <div class="seg" id="dZoom"><button data-a="90">1.5ч</button><button data-a="180" class="on">3ч</button><button data-a="360">6ч</button></div></div></div>
+        <div id="dDiagram" class="diagram-host"></div></div>
+      <div class="panel d-dis"><div class="ph"><h3 data-i18n="d_dis"></h3><span class="sub" id="dDisNote"></span></div>
+        <div class="scroll" id="dDisBody">
+          <div class="dis-form"><select id="dKind" class="sel"></select><span id="dParams" class="dparams"></span><button class="btn primary sm" id="dInject" data-i18n="d_inject"></button></div>
+          <div class="dis-form"><span class="lbl" data-i18n="d_stress"></span><button class="btn danger sm" id="dStress5">×5</button><button class="btn danger sm" id="dStress10">×10</button><span class="lbl" id="dStressInfo"></span></div>
+          <div class="ph" style="padding:8px 0 4px"><h3 data-i18n="d_alts"></h3><span class="sub num" id="dAltsTime"></span></div>
+          <div id="dAlts"></div>
+        </div></div>
+    </div>
+    <div class="panel d-replay"><button class="btn sm" id="dLive" data-i18n="d_live"></button><button class="btn sm" id="dPlay" data-i18n="d_play"></button>
+      <span class="lbl" data-i18n="d_replay"></span><div class="slider-wrap"><input type="range" id="dSlider" min="0" max="0" value="0"><div id="dMarks" class="marks"></div></div><span class="num lbl" id="dRLabel" style="min-width:150px;text-align:right"></span></div>
+  </section>
+
+  <!-- ================= ВИД А ================= -->
+  <section id="viewA" class="view" style="display:none">
+    <div class="panel" id="mapWrap" style="flex:1;min-width:0;overflow:hidden">
+      <canvas id="mapCanvas" style="position:absolute;inset:0"></canvas>
+      <div class="overlay" style="left:12px;top:12px;padding:6px"><div class="seg" id="mapMode"><button data-mode="scheme" class="on" data-i18n="map_scheme"></button><button data-mode="heat" data-i18n="map_heat"></button></div></div>
+      <div class="overlay" id="legendBox" style="left:12px;bottom:34px;padding:8px 12px"></div>
+      <div class="overlay" style="left:12px;bottom:8px;padding:3px 10px;font-size:11px;color:var(--mu)" data-i18n="map_hint"></div>
+      <button id="mapReset" class="btn sm overlay" style="right:12px;top:12px;padding:5px 10px">1:1</button>
+    </div>
+    <aside class="side">
+      <div class="panel">
+        <div class="ph"><h3 data-i18n="net_nodes"></h3></div>
+        <div id="netList" style="padding:0 6px 8px"></div>
+      </div>
+      <div class="panel" id="hotCard">
+        <div class="ph"><h3 data-i18n="hot_sections"></h3></div>
+        <div id="hotList" style="padding:0 6px 4px"></div>
+        <div style="padding:0 14px 10px;font-size:11px;color:var(--mu)" data-i18n="hot_note"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h3 data-i18n="fc_title"></h3><span class="sub" id="fcAName"></span></div>
+        <div id="fcA" style="height:220px"></div>
+        <div style="padding:0 14px 10px;font-size:11px;color:var(--mu)"><span data-i18n="fc_unit"></span>. <span data-i18n="fc_note"></span></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h3 data-i18n="saf_log"></h3></div>
+        <div class="feed" style="padding:0 10px 10px;max-height:190px;overflow-y:auto"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ================= ВИД Б ================= -->
+  <section id="viewB" class="view" style="display:none">
+    <div class="col">
+      <div class="panel" id="sceneWrap" style="flex:1;min-height:0;overflow:hidden">
+        <div id="scene"></div>
+        <div class="overlay" style="left:12px;top:12px;padding:6px 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span class="lbl" data-i18n="station"></span><select id="stSel" class="sel"></select><b id="stLoad" class="num"></b>
+          <div class="seg" id="layerSeg"><button data-layer="ops" class="on" data-i18n="layer_ops"></button><button data-layer="iot" data-i18n="layer_iot"></button><button data-layer="cctv" data-i18n="layer_cctv"></button></div>
+          <div class="seg" id="camSeg"><button data-cam="persp" data-i18n="cam_persp"></button><button data-cam="top" data-i18n="cam_top"></button><button data-cam="orbit" data-i18n="cam_orbit"></button></div>
+        </div>
+        <div class="overlay" id="profChip" style="left:12px;top:58px;padding:6px 10px;font-size:11.5px;color:var(--tx-2);max-width:min(560px,60%)"></div>
+        <div class="overlay" id="layerInfo" style="left:12px;top:112px;padding:6px 10px;font-size:11.5px;color:var(--tx-2);display:none"></div>
+        <div class="overlay stats5" style="right:12px;bottom:12px">
+          <div><div class="v num" id="hTrains">0</div><div class="l" data-i18n="hud_trains"></div></div>
+          <div><div class="v num" id="hLocos">0</div><div class="l" data-i18n="hud_locos"></div></div>
+          <div><div class="v num" id="hQueue">0</div><div class="l" data-i18n="hud_queue"></div></div>
+          <div><div class="v num" id="hDone">0</div><div class="l" data-i18n="hud_done"></div></div>
+          <div><div class="v num" id="hKm">0.0</div><div class="l" data-i18n="hud_km"></div></div>
+        </div>
+        <div class="overlay" style="left:12px;bottom:12px;padding:6px 10px;font-size:11px;display:flex;gap:14px;flex-wrap:wrap;max-width:44%">
+          <span class="lg-row"><i style="background:#5b8fc9;height:3px"></i><span data-i18n="k_reception"></span></span>
+          <span class="lg-row"><i style="background:#8f8fb5;height:3px"></i><span data-i18n="k_sorting"></span></span>
+          <span class="lg-row"><i style="background:#8795a8;height:3px"></i><span data-i18n="k_main"></span></span>
+          <span class="lg-row"><i style="background:#cf9a3a;height:3px"></i><span data-i18n="k_depot"></span></span>
+        </div>
+        <div id="pickCard" class="overlay pick" style="display:none"></div>
+        <div id="alertBox" class="alert" style="display:none"></div>
+        <div id="loadVeil" style="position:absolute;inset:0;z-index:40;background:var(--bg);display:none;place-items:center;color:var(--mu)" data-i18n="loading"></div>
+      </div>
+
+      <div class="panel res" id="resPanel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><h3 style="font-size:13px;font-weight:650" data-i18n="res_title"></h3><span class="lbl" data-i18n="res_sub"></span></div>
+        <div class="res-grid" id="resGrid"></div>
+      </div>
+    </div>
+
+    <aside class="side wide">
+      <div class="panel" style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <div class="stabs" id="sideTabs">
+          <button data-pane="sim" class="on" data-i18n="tb_sim"></button><button data-pane="ai" data-i18n="tb_ai"></button><button data-pane="dis" data-i18n="tb_dis"></button><button data-pane="saf" data-i18n="tb_saf"></button>
+        </div>
+        <div style="overflow-y:auto;flex:1;min-height:0">
+
+          <div class="pane on" id="pane-sim">
+            <div class="ph"><h3 data-i18n="sim_title"></h3></div><div style="padding:0 14px 8px;color:var(--mu);font-size:11.5px" data-i18n="sim_sub"></div>
+            <div class="pb">
+              <div class="field"><div class="top"><span data-i18n="p_lambda"></span><b class="num" id="vLambda"></b></div><input id="pLambda" type="range" min="0.5" max="6" step="0.1" value="2.2"></div>
+              <div class="field"><div class="top"><span data-i18n="p_locos"></span><b class="num" id="vLocos"></b></div><input id="pLocos" type="range" min="1" max="4" step="1" value="2"></div>
+              <div class="field"><div class="top"><span data-i18n="p_crews"></span><b class="num" id="vCrews"></b></div><input id="pCrews" type="range" min="1" max="4" step="1" value="2"></div>
+              <div class="field"><div class="top"><span data-i18n="p_proc"></span><b class="num" id="vProc"></b></div><input id="pProc" type="range" min="10" max="90" step="5" value="35"></div>
+              <button id="btnRun" class="btn primary block" data-i18n="run_btn"></button>
+              <div id="runStatus" class="stat" style="display:none;margin-top:10px">
+                <div style="display:flex;justify-content:space-between;font-size:12px"><span id="runMsg"></span><span class="mono" id="runId" style="color:var(--mu)"></span></div>
+                <div class="bar" style="margin-top:6px"><i id="runBar" style="width:0;background:var(--accent)"></i></div>
+              </div>
+              <div id="simRes" style="display:none;margin-top:12px">
+                <div class="grid3">
+                  <div class="stat"><div class="v num" id="rThr"></div><div class="l"><span data-i18n="r_thr"></span>, <span data-i18n="u_day"></span></div></div>
+                  <div class="stat"><div class="v num" id="rCap"></div><div class="l"><span data-i18n="r_cap"></span>, <span data-i18n="u_day"></span></div></div>
+                  <div class="stat"><div class="v num" id="rUtil"></div><div class="l" data-i18n="r_util"></div></div>
+                  <div class="stat"><div class="v num" id="rWait"></div><div class="l"><span data-i18n="r_wait"></span>, <span data-i18n="u_min"></span></div></div>
+                  <div class="stat"><div class="v num" id="rDwell"></div><div class="l"><span data-i18n="r_dwell"></span>, <span data-i18n="u_min"></span></div></div>
+                  <div class="stat"><div class="v num" id="rQ"></div><div class="l" data-i18n="r_queue"></div></div>
+                </div>
+                <div id="rVerdict" class="step" style="margin-top:8px"></div>
+                <div class="lbl" style="margin-top:8px" data-i18n="ch_queue"></div><div id="chQueue" style="height:150px"></div>
+                <div class="lbl" data-i18n="ch_crews"></div><div id="chCrews" style="height:130px"></div>
+                <details><summary>▸ <span data-i18n="api_call"></span></summary><pre id="apiJson"></pre></details>
+              </div>
+            </div>
+          </div>
+
+          <div class="pane" id="pane-ai">
+            <div class="ph"><h3 data-i18n="ai_title"></h3></div><div style="padding:0 14px 8px;color:var(--mu);font-size:11.5px" data-i18n="ai_sub"></div>
+            <div class="pb">
+              <div id="aiIdle" class="step" style="color:var(--mu)" data-i18n="ai_idle"></div>
+              <div id="aiBody" style="display:none">
+                <div class="grid2">
+                  <div class="stat"><div class="l"><span data-i18n="ai_empty"></span> · <span data-i18n="ai_base"></span></div><div class="v num" id="aiEB"></div></div>
+                  <div class="stat" style="border-color:rgba(74,163,122,.5)"><div class="l"><span data-i18n="ai_empty"></span> · <span data-i18n="ai_opt"></span></div><div class="v num" id="aiEO" style="color:#8fd0b1"></div></div>
+                  <div class="stat"><div class="l" data-i18n="ai_total"></div><div class="v num" id="aiTot" style="font-size:14px"></div></div>
+                  <div class="stat"><div class="l" data-i18n="ai_gain"></div><div class="v num" id="aiGain"></div></div>
+                </div>
+                <div class="lbl" style="margin-top:8px"><span data-i18n="ai_dwell"></span>: <b id="aiDwell" class="num" style="color:var(--tx)"></b></div>
+                <div class="lbl" style="margin-top:10px"><b data-i18n="ai_gantt" style="color:var(--tx)"></b> · <span id="aiOps"></span></div>
+                <div id="chGantt" style="height:170px"></div>
+                <div style="color:var(--mu);font-size:11px;margin:4px 0 8px" data-i18n="ai_method"></div>
+                <button id="btnAIreset" class="btn sm" data-i18n="ai_reset"></button>
+              </div>
+              <button id="btnAI2" class="btn ok block" style="margin-top:10px" data-i18n="ai_run"></button>
+              <div class="ph" style="padding-left:0;padding-right:0;margin-top:10px"><h3 data-i18n="fc_title"></h3></div>
+              <div id="fcB" style="height:210px"></div>
+              <div style="font-size:11px;color:var(--mu)"><span data-i18n="fc_unit"></span>. <span data-i18n="fc_note"></span></div>
+            </div>
+          </div>
+
+          <div class="pane" id="pane-dis">
+            <div class="ph"><h3 data-i18n="dis_title"></h3></div><div style="padding:0 14px 8px;color:var(--mu);font-size:11.5px" data-i18n="dis_sub"></div>
+            <div class="pb">
+              <div id="disBtns" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+              <div id="disHint" class="step" style="margin-top:10px;color:var(--mu)" data-i18n="dis_hint"></div>
+              <div id="disRes" style="display:none;margin-top:10px">
+                <div class="step" id="disInfo"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 6px"><b style="font-size:12.5px" data-i18n="dis_alts"></b><span class="badge ok num" id="disMs"></span></div>
+                <div class="alt" id="disNoAct"></div>
+                <div id="disAlts"></div>
+                <div class="lbl" data-i18n="ai_gantt"></div><div id="chDisGantt" style="height:150px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pane" id="pane-saf">
+            <div class="ph"><h3 data-i18n="saf_title"></h3></div><div style="padding:0 14px 8px;color:var(--mu);font-size:11.5px" data-i18n="saf_sub"></div>
+            <div class="pb">
+              <div class="lbl" style="font-weight:600;margin-bottom:4px" data-i18n="saf_shoes"></div>
+              <div id="shoeList"></div>
+              <div style="display:flex;gap:8px;margin:8px 0 6px"><button id="btnShoe2" class="btn danger sm" style="flex:1" data-i18n="saf_shoes_test"></button><button id="btnRemove" class="btn ok sm" style="display:none" data-i18n="saf_remove"></button></div>
+              <div style="display:flex;gap:8px;margin:0 0 14px"><button id="btnUnsec" class="btn danger sm" style="flex:1" data-i18n="saf_unsec"></button><button id="btnSecure" class="btn ok sm" style="display:none" data-i18n="saf_secure"></button></div>
+              <div class="lbl" style="font-weight:600;margin-bottom:4px" data-i18n="saf_routes"></div>
+              <div id="ilSteps"></div>
+              <button id="btnHostile" class="btn sm block" style="margin-bottom:14px" data-i18n="saf_hostile"></button>
+              <div class="lbl" style="font-weight:600;margin-bottom:4px" data-i18n="saf_log"></div>
+              <div class="feed" style="max-height:200px;overflow-y:auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+
+<div class="modal" id="authModal"><div class="mbox" style="width:min(380px,92vw)">
+  <div class="bar-t"><b data-i18n="d_login_title"></b><button class="btn sm" data-close="authModal" data-i18n="d_close"></button></div>
+  <div class="mbody"><div class="field-l"><label data-i18n="d_user"></label><input id="aUser" class="inp" autocomplete="username"></div>
+  <div class="field-l"><label data-i18n="d_pass"></label><input id="aPass" type="password" class="inp" autocomplete="current-password"></div>
+  <div id="aErr" class="step no" style="display:none" data-i18n="d_login_err"></div>
+  <div id="aDemo" class="lbl" style="display:none;margin:6px 0"></div>
+  <div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" id="aGo" style="flex:1" data-i18n="d_login"></button><button class="btn" id="aLogout" style="display:none" data-i18n="d_logout"></button></div></div></div></div>
+<div class="modal" id="setModal"><div class="mbox" style="width:min(640px,94vw)">
+  <div class="bar-t"><b data-i18n="d_set_title"></b><button class="btn sm" data-close="setModal" data-i18n="d_close"></button></div>
+  <div class="mbody" id="setBody"></div></div></div>
+<div class="modal" id="fmModal"><div class="mbox" style="width:min(560px,94vw)">
+  <div class="bar-t"><b data-i18n="d_formula_title"></b><button class="btn sm" data-close="fmModal" data-i18n="d_close"></button></div>
+  <div class="mbody" id="fmBody"></div></div></div>
+<div id="toasts"></div>
+<div class="modal" id="cctvModal">
+  <div class="cctv">
+    <div class="bar-t"><span id="cctvTitle"></span><button class="btn sm" id="cctvClose" data-i18n="cctv_close"></button></div>
+    <div class="screen">
+      <canvas id="cctvCanvas" width="640" height="360"></canvas><div class="scan"></div>
+      <div class="osd" style="left:0;top:0"><span class="recdot"></span><span data-i18n="cctv_live"></span></div>
+      <div class="osd" id="cctvTime" style="right:0;top:0"></div>
+      <div class="osd" id="cctvId" style="left:0;bottom:0"></div>
+    </div>
+    <div class="ft"><span data-i18n="cctv_note"></span><button class="btn sm" id="cctvFreeze" data-i18n="cctv_snap"></button></div>
+  </div>
+</div>
+
+<footer data-i18n="footer"></footer>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
