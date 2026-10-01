@@ -105,7 +105,7 @@ Docker: `cp .env.example .env && docker compose up --build` (`--profile demo` д
 | Роли и аутентификация | viewer / dispatcher / admin, токены HMAC, личные аккаунты диспетчеров |
 | Перемотка 5–15 мин, отчёт PDF/CSV | ползунок внизу «Управления»; `/api/v1/stations/{id}/report.pdf` и `.csv` |
 | Сдача дежурства, ночной режим | `POST /api/v1/stations/{id}/handover`; окно «Сдача дежурства» |
-| Документация, презентация, сценарий демо | `/docs`, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/DEMO.md`](docs/DEMO.md), [`docs/presentation/`](docs/presentation) |
+| Документация и сценарий демо | `/docs`, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/DEMO.md`](docs/DEMO.md) |
 
 ## Проверка
 
@@ -127,7 +127,7 @@ backend/   main.py · digital/ (config, infra, timetable, simulator, ingest, sta
 frontend/  index.html · css/{app,dash,light}.css · img/kz-rail-map.jpg
            js/{app,i18n,map,netdata,scene3d,sim}.js · js/dash/{dash,stream,scheme,diagram,indexw}.js
 tools/     ws_client_demo.py · load_test.py        tests/  test_digital.py · test_api.py · run_all.py
-docs/      ARCHITECTURE.md · DEMO.md · PRESENTATION.md · presentation/ (KZ, RU) · img/        Dockerfile · render.yaml · docker-compose.yml
+docs/      ARCHITECTURE.md · DEMO.md · architecture.svg · img/        Dockerfile · render.yaml · docker-compose.yml
 ```
 
 ## Честные оговорки
