@@ -65,7 +65,10 @@ function relabel(sp, text, color, border) {
 
 const G = { box: new THREE.BoxGeometry(1, 1, 1), cyl: new THREE.CylinderGeometry(1, 1, 1, 20), sph: new THREE.SphereGeometry(1, 14, 10), cone: new THREE.ConeGeometry(1, 1, 24, 1, true) };
 const M = {};
-const mat = (key, col, o = {}) => (M[key] ||= new THREE.MeshStandardMaterial({ color: col, roughness: 0.75, metalness: 0.15, ...o }));
+// Светлая «дневная» тема: тёмные цвета окружения (здания, горы, балласт, платформы) смешиваются со светлым тоном, подвижной состав не трогаем
+const DECOR = /^(bld|bldroof|bwin|mtn|twr|coal|bunker|cust|custroof|emb|platform|platlong|ballast|swbase|elev|ship|shipb|sleeper|mast|gant|pole|stem|gate|rfidp|camh)/;
+const lighten = (c, k) => { const a = new THREE.Color(c), b = new THREE.Color(0xb4c3d6); return a.lerp(b, k); };
+const mat = (key, col, o = {}) => (M[key] ||= new THREE.MeshStandardMaterial({ color: DECOR.test(key) ? lighten(col, 0.62) : col, roughness: 0.75, metalness: 0.15, ...o }));
 function bx(parent, w, h, d, x, y, z, m) { const me = new THREE.Mesh(G.box, m); me.scale.set(w, h, d); me.position.set(x, y, z); parent.add(me); return me; }
 
 let CARGO_W = { box: 3, tank: 1, gondola: 1, platform: 1 };
@@ -115,10 +118,10 @@ export class StationScene {
     this.el = container; this.hooks = hooks; this.alive = true; this.paused = false;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 1.25;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 1.0;
     container.appendChild(this.renderer.domElement); this.renderer.domElement.style.display = 'block';
-    this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x0d131b);
-    this.scene.fog = new THREE.Fog(0x0d131b, 240, 540);
+    this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0xdbe8f6);
+    this.scene.fog = new THREE.Fog(0xdbe8f6, 260, 620);
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.5, 1200);
     this.cam = { theta: 0.0, phi: 0.72, r: 160, tx: -4, ty: 0, tz: 11, goal: null, auto: false };
     this._lights(); this._ground();
@@ -135,16 +138,16 @@ export class StationScene {
   }
 
   _lights() {
-    this.scene.add(new THREE.AmbientLight(0xa9b8cc, 0.85));
-    this.scene.add(new THREE.HemisphereLight(0x8aa4c8, 0x101820, 0.7));
-    const d = new THREE.DirectionalLight(0xe8eef8, 0.95); d.position.set(-80, 140, 90); this.scene.add(d);
-    const d2 = new THREE.DirectionalLight(0x7f9cc4, 0.3); d2.position.set(120, 60, -80); this.scene.add(d2);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xa9bccf, 0.8));
+    const d = new THREE.DirectionalLight(0xffffff, 1.05); d.position.set(-80, 140, 90); this.scene.add(d);
+    const d2 = new THREE.DirectionalLight(0xcfe0f5, 0.35); d2.position.set(120, 60, -80); this.scene.add(d2);
   }
   _ground() {
-    this.groundMat = new THREE.MeshStandardMaterial({ color: 0x131c27, roughness: 0.95, metalness: 0 });
+    this.groundMat = new THREE.MeshStandardMaterial({ color: 0xc5d3c4, roughness: 0.95, metalness: 0 });
     const gm = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400), this.groundMat);
     gm.rotation.x = -Math.PI / 2; gm.position.y = -0.02; this.scene.add(gm);
-    const grid = new THREE.GridHelper(900, 150, 0x22303f, 0x182430); grid.material.transparent = true; grid.material.opacity = 0.55; this.scene.add(grid);
+    const grid = new THREE.GridHelper(900, 150, 0xaebed0, 0xbccadb); grid.material.transparent = true; grid.material.opacity = 0.5; this.scene.add(grid);
   }
   resize() {
     const w = this.el.clientWidth || 800, h = this.el.clientHeight || 500;
@@ -225,7 +228,7 @@ export class StationScene {
     this.profile = (meta && meta.profile) || {}; CARGO_W = this.profile.cargo || { box: 3, tank: 1, gondola: 1, platform: 1 };
     this.procMult = 1; this.procUntil = 0; this.routeExtra = 0; this.routeUntil = 0; this.burstLeft = 0; this.locoLost = 0; this.lostUntil = 0;
     this.extraBlocked = new Map(); this.storage = []; this.bunchNext = false; this.burstCountdown = 3;
-    this.groundMat.color.setHex(this.profile.season === 'winter' ? 0x27333f : 0x131c27);
+    this.groundMat.color.setHex(this.profile.season === 'winter' ? 0xe6edf5 : 0xc5d3c4);
     this._buildStatic(); this._buildDecor(); this._buildIot(); this._buildCctv(); this.setLayer(this.layer);
     this.minLen = Math.min(...layout.tracks.filter(t => t.idx > 0).map(t => t.x1 - t.x0));
     this.maxWag = Math.max(5, Math.min(11, Math.floor((this.minLen - 28) / WL)));
@@ -315,7 +318,7 @@ export class StationScene {
       for (const x of [20, 70]) { bx(g, 0.9, 15, 0.9, x, 7.5, -6.5, mat('crane', 0x5f7592)); bx(g, 0.9, 15, 0.9, x, 7.5, zf, mat('crane', 0x5f7592)); bx(g, 1.1, 1.1, zf + 7, x, 15, zf / 2 - 3, mat('crane', 0x5f7592)); }
       lab('ТАМОЖНЯ · ПЕРЕГРУЗ / СМЕНА КОЛЕИ', 40, 12, -30, '#e6bf72');
     } else if (kind === 'sea') {
-      const sea = new THREE.Mesh(new THREE.PlaneGeometry(1400, 500), new THREE.MeshStandardMaterial({ color: 0x14384f, roughness: 0.35, metalness: 0.2 })); sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0, -300); g.add(sea);
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(1400, 500), new THREE.MeshStandardMaterial({ color: 0x4a93c4, roughness: 0.35, metalness: 0.2 })); sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0, -300); g.add(sea);
       bx(g, 90, 6, 16, 20, 3, -78, mat('ship', 0x3a4a5e)); bx(g, 20, 12, 14, 52, 9, -78, mat('shipb', 0x56667c));
       for (const x of [-20, 20]) { bx(g, 1, 24, 1, x, 12, -48, mat('crane', 0xb35a3c)); bx(g, 40, 1, 1, x + 14, 24, -48, mat('crane', 0xb35a3c)); }
       for (let i = 0; i < 4; i++) cyl(6, 10, 70 + i * 14, 5, -22, 0x7d8a9c, { metalness: 0.4 });

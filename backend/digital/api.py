@@ -117,15 +117,17 @@ async def login(body: LoginIn, request: Request):
     if not tok:
         raise HTTPException(401, "bad credentials")
     d = AUTH.verify(tok)
-    return {"token": tok, "role": d["role"], "user": d["sub"], "expires": d["exp"]}
+    return {"token": tok, "role": d["role"], "user": d["sub"], "name": d.get("name", d["sub"]), "station": d.get("st", ""), "expires": d["exp"]}
 
 
 @router.get("/api/v1/auth/info", tags=["auth"])
 async def auth_info(request: Request):
     role = AUTH.role_of(request)
-    out = {"role": role, "dev_mode": AUTH.demo, "open_demo": AUTH.open_demo}
-    if AUTH.demo:
-        out["demo_users"] = [{"user": "dispatcher", "password": "dispatcher", "role": "dispatcher"}, {"user": "admin", "password": "admin", "role": "admin"}]
+    h = request.headers.get("authorization", "")
+    d = AUTH.verify(h[7:]) if h.lower().startswith("bearer ") else None
+    out = {"role": role, "dev_mode": AUTH.demo, "open_demo": AUTH.open_demo, "name": (d or {}).get("name"), "station": (d or {}).get("st", "")}
+    if AUTH.demo_users:                                   # демо-рабочие места для жюри (синтетические учётки)
+        out["demo_users"] = AUTH.demo_users
     return out
 
 

@@ -40,14 +40,14 @@ export class IndexWidget {
     const s = this.svg; s.innerHTML = '';
     const mk = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); s.appendChild(e); return e; };
     const ang = (v) => 180 - v * 1.8;
-    mk('path', { d: arc(100, 100, 80, 180, 0), fill: 'none', stroke: '#222f3f', 'stroke-width': 13, 'stroke-linecap': 'butt' });
+    mk('path', { d: arc(100, 100, 80, 180, 0), fill: 'none', stroke: '#d7e2f0', 'stroke-width': 13, 'stroke-linecap': 'butt' });
     mk('path', { d: arc(100, 100, 80, ang(0), ang(thr.attention)), fill: 'none', stroke: 'rgba(201,83,79,.35)', 'stroke-width': 13 });
     mk('path', { d: arc(100, 100, 80, ang(thr.attention), ang(thr.norm)), fill: 'none', stroke: 'rgba(207,154,58,.35)', 'stroke-width': 13 });
     mk('path', { d: arc(100, 100, 80, ang(thr.norm), ang(100)), fill: 'none', stroke: 'rgba(74,163,122,.35)', 'stroke-width': 13 });
     if (idx.score > 0.5) mk('path', { d: arc(100, 100, 80, ang(0), ang(Math.max(0.6, idx.score))), fill: 'none', stroke: col, 'stroke-width': 13, 'stroke-linecap': 'butt' });
     for (const v of [thr.attention, thr.norm]) { const a = ang(v) * Math.PI / 180; mk('line', { x1: 100 + 71 * Math.cos(a), y1: 100 - 71 * Math.sin(a), x2: 100 + 89 * Math.cos(a), y2: 100 - 89 * Math.sin(a), stroke: '#0e141c', 'stroke-width': 1.6 }); }
     const na = ang(idx.score) * Math.PI / 180;
-    mk('line', { x1: 100 + 54 * Math.cos(na), y1: 100 - 54 * Math.sin(na), x2: 100 + 90 * Math.cos(na), y2: 100 - 90 * Math.sin(na), stroke: '#e6ebf2', 'stroke-width': 2.2, 'stroke-linecap': 'round' });
+    mk('line', { x1: 100 + 54 * Math.cos(na), y1: 100 - 54 * Math.sin(na), x2: 100 + 90 * Math.cos(na), y2: 100 - 90 * Math.sin(na), stroke: '#10243d', 'stroke-width': 2.2, 'stroke-linecap': 'round' });
     for (const [v, tx] of [[0, '0'], [100, '100']]) { const a = ang(v) * Math.PI / 180; const e = mk('text', { x: 100 + 80 * Math.cos(a), y: 114, 'text-anchor': 'middle', class: 'g-tick' }); e.textContent = tx; }
     const h = this.host;
     h.querySelector('#gScore').textContent = idx.score.toFixed(0); h.querySelector('#gScore').style.color = col;
@@ -67,7 +67,7 @@ export class IndexWidget {
     h.querySelector('#gTop').innerHTML = idx.top.map(f => {
       const w = Math.min(100, f.loss / mx * 100), c = f.loss >= 6 ? '#c9534f' : f.loss >= 2 ? '#cf9a3a' : '#5b8fc9';
       return `<div class="fct" title="${t('fh_' + f.key)} · ${t('d_weight')} ${(f.weight * 100).toFixed(0)}% · ${t('d_score')} ${f.score.toFixed(2)}">
-        <div class="fct-top"><span>${t('f_' + f.key)}</span><b class="num" style="color:${f.loss >= 0.05 ? c : '#8fd0b1'}">${f.loss >= 0.05 ? '−' + f.loss.toFixed(1) : '0.0'}</b></div>
+        <div class="fct-top"><span>${t('f_' + f.key)}</span><b class="num" style="color:${f.loss >= 0.05 ? c : '#0f6d49'}">${f.loss >= 0.05 ? '−' + f.loss.toFixed(1) : '0.0'}</b></div>
         <div class="bar"><i style="width:${w}%;background:${c}"></i></div><div class="fct-raw num">${fmt[f.key](f.raw)}</div></div>`;
     }).join('');
   }

@@ -291,3 +291,18 @@ def test_handover_checklist_and_night():
     assert r.status_code == 200 and r.json()["mismatch"] is True
     r = c.post("/api/v1/stations/almaty1/handover", json={"items": all_ok, "night": True}, headers=h)          # ночью — дополнительный пункт
     assert r.status_code == 422 and "night_report" in r.json()["detail"]["missing"]
+
+
+def test_personal_dispatcher_accounts():
+    c = TestClient(main.app)
+    info = c.get("/api/v1/auth/info").json()
+    assert info["demo_users"] and all({"user", "password", "station", "name"} <= set(u) for u in info["demo_users"])
+    u = info["demo_users"][0]
+    r = c.post("/api/v1/auth/login", json={"username": u["user"], "password": u["password"]})
+    assert r.status_code == 200 and r.json()["role"] == "dispatcher" and r.json()["station"] == u["station"] and r.json()["name"] == u["name"]
+    tok = r.json()["token"]
+    h = {"Authorization": "Bearer " + tok}
+    assert c.get("/api/v1/auth/info", headers=h).json()["station"] == u["station"]
+    assert c.post("/api/v1/auth/login", json={"username": u["user"], "password": "wrong"}).status_code == 401
+    # личный диспетчер может управлять, но не меняет настройки (только admin)
+    assert c.put("/api/v1/config", json={"patch": {"planner": {"time_limit_s": 1.0}}}, headers=h).status_code == 403

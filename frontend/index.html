@@ -6,10 +6,37 @@
 <title>RailMind AI</title>
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/dash.css">
+<link rel="stylesheet" href="css/light.css">
 <script src="vendor/echarts.min.js"></script>
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+<script>try{if(sessionStorage.getItem('rt_tok')||sessionStorage.getItem('rt_guest'))document.documentElement.classList.add('authed')}catch(e){}</script>
 </head>
 <body>
+<div id="landing">
+  <div class="lg-wrap">
+    <section class="lg-left">
+      <div class="lg-brand"><div class="logo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M6 21 9.5 3M18 21 14.5 3M7.5 9h9M6.7 14h10.6M5.8 19h12.4"/></svg></div><b>RailMind AI</b></div>
+      <div class="lg-tag" data-i18n="lg_tag"></div>
+      <h2 class="lg-h" data-i18n="lg_h"></h2>
+      <p class="lg-p" data-i18n="lg_p"></p>
+      <ul class="lg-feat"><li data-i18n="lg_f1"></li><li data-i18n="lg_f2"></li><li data-i18n="lg_f3"></li><li data-i18n="lg_f4"></li></ul>
+      <div class="lg-chart"><div class="lg-chart-h"><b data-i18n="lg_chart"></b><span data-i18n="lg_chart_n"></span></div><div id="lgChart"></div></div>
+    </section>
+    <section class="lg-right">
+      <div class="langs lg-langs"><button data-lang="ru">RU</button><button data-lang="kz">KZ</button><button data-lang="en">EN</button></div>
+      <form class="lg-card" id="lgForm" autocomplete="on">
+        <h3 data-i18n="lg_login_t"></h3><div class="lg-sub" data-i18n="lg_login_s"></div>
+        <label for="lgUser" data-i18n="lg_user"></label><input id="lgUser" class="inp lg-inp" autocomplete="username" required>
+        <label for="lgPass" data-i18n="lg_pass"></label><input id="lgPass" class="inp lg-inp" type="password" autocomplete="current-password" required>
+        <div id="lgErr" class="lg-err" style="display:none" data-i18n="lg_err"></div>
+        <button class="btn primary lg-go" type="submit" data-i18n="lg_go"></button>
+        <div id="lgDemo" class="lg-demo" style="display:none"><div class="lg-demo-t" data-i18n="lg_demo_t"></div><div id="lgDemoList"></div></div>
+        <button class="lg-guest" type="button" id="lgGuest" data-i18n="lg_guest"></button>
+      </form>
+      <div class="lg-note" data-i18n="lg_note"></div>
+    </section>
+  </div>
+</div>
 
 <header class="hdr">
   <div class="brand">
@@ -29,13 +56,24 @@
 </header>
 
 <nav class="nav">
-  <div class="tabs"><button id="tabD" class="tab on" data-i18n="tab_dash"></button><button id="tabA" class="tab" data-i18n="tab_a"></button><button id="tabB" class="tab" data-i18n="tab_b"></button></div>
-  <div class="demo" id="demoBar">
-    <button id="btnSim" class="btn primary" data-i18n="demo_sim"></button>
-    <button id="btnProb" class="btn danger"></button>
-    <button id="btnAI" class="btn ok" data-i18n="demo_ai"></button>
+  <div class="tabs">
+    <button id="tabObs" class="tab on"><span data-i18n="tab_obs"></span><small data-i18n="tab_obs_s"></small></button>
+    <button id="tabCtl" class="tab"><span data-i18n="tab_ctl"></span><small data-i18n="tab_ctl_s"></small></button>
   </div>
+  <div class="userchip" id="userChip"><span class="uname" id="uName"></span><span class="badge mu" id="uRole"></span><button class="btn sm" id="uBtn"></button></div>
 </nav>
+<div class="subnav" id="subnav">
+  <button id="subA" class="subtab on" data-i18n="sub_net"></button><span class="sep">›</span><button id="subB" class="subtab" data-i18n="sub_st"></button>
+  <span class="sp"></span>
+  <div class="demo" id="demoBar" title="">
+    <span class="lbl" data-i18n="sandbox_l"></span>
+    <button id="btnSim" class="btn primary sm" data-i18n="demo_sim"></button>
+    <button id="btnProb" class="btn danger sm"></button>
+    <button id="btnAI" class="btn ok sm" data-i18n="demo_ai"></button>
+  </div>
+  <button class="btn primary sm" id="toCtl" data-i18n="to_ctl"></button>
+</div>
+<div class="hint" id="hint"><span id="hintTxt"></span><button class="btn sm" id="hintX" data-i18n="hint_ok"></button></div>
 
 <main>
   <!-- ================= ПУЛЬТ ДИСПЕТЧЕРА · ЦИФРОВАЯ СТАНЦИЯ ================= -->

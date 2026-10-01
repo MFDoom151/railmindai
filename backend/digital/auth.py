@@ -33,10 +33,30 @@ class Auth:
         for role in ("admin", "dispatcher"):
             u, p = env(f"RAILTWIN_{role.upper()}_USER"), env(f"RAILTWIN_{role.upper()}_PASSWORD")
             if u and p:
-                self.users[u] = {"password": p, "role": role}
+                self.users[u] = {"password": p, "role": role, "station": "", "name": u}
+        # личные рабочие места: RAILTWIN_DISPATCHERS="логин:пароль:станция:Имя;логин2:пароль2:станция2:Имя2"
+        for item in (env("RAILTWIN_DISPATCHERS") or "").split(";"):
+            parts = [x.strip() for x in item.split(":")]
+            if len(parts) >= 2 and parts[0] and parts[1]:
+                self.users[parts[0]] = {"password": parts[1], "role": "dispatcher", "station": parts[2] if len(parts) > 2 else "",
+                                        "name": parts[3] if len(parts) > 3 and parts[3] else parts[0]}
+        # демонстрационные диспетчеры для жюри (синтетические; отключаются RAILTWIN_DEMO_USERS=0)
+        self.demo_users: list = []
+        if env("RAILTWIN_DEMO_USERS", "1") != "0":
+            try:
+                import yaml
+                from pathlib import Path
+                f = Path(__file__).resolve().parent.parent / "config" / "demo_users.yaml"
+                for u in (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("users", []):
+                    self.users.setdefault(u["login"], {"password": u["password"], "role": u.get("role", "dispatcher"),
+                                                       "station": u.get("station", ""), "name": u.get("name", u["login"])})
+                    self.demo_users.append({"user": u["login"], "password": u["password"], "station": u.get("station", ""), "name": u.get("name", u["login"])})
+            except Exception as e:                                    # отсутствие файла демо-пользователей не должно ронять сервис
+                LOG.warning("демо-пользователи не загружены: %s", e)
         self.demo = False
-        if not self.users and self.dev:
-            self.users = {"admin": {"password": "admin", "role": "admin"}, "dispatcher": {"password": "dispatcher", "role": "dispatcher"}}
+        if not any(u["role"] == "admin" for u in self.users.values()) and self.dev:
+            self.users.update({"admin": {"password": "admin", "role": "admin", "station": "", "name": "admin"}})
+            self.users.setdefault("dispatcher", {"password": "dispatcher", "role": "dispatcher", "station": "", "name": "dispatcher"})
             self.demo = True
             LOG.warning("DEV-режим: включены демо-учётки admin/admin и dispatcher/dispatcher. Для прода задайте RAILTWIN_*_USER/PASSWORD.")
         self.secret = (env("RAILTWIN_SECRET") or secrets.token_hex(32)).encode()
@@ -48,8 +68,8 @@ class Auth:
     def _sign(self, payload: bytes) -> str:
         return hmac.new(self.secret, payload, hashlib.sha256).hexdigest()
 
-    def issue(self, user: str, role: str) -> str:
-        body = base64.urlsafe_b64encode(json.dumps({"sub": user, "role": role, "exp": int(time.time()) + TTL}).encode())
+    def issue(self, user: str, role: str, station: str = "", name: str = "") -> str:
+        body = base64.urlsafe_b64encode(json.dumps({"sub": user, "role": role, "st": station, "name": name or user, "exp": int(time.time()) + TTL}).encode())
         return body.decode() + "." + self._sign(body)
 
     def verify(self, token: str) -> Optional[dict]:
@@ -72,7 +92,7 @@ class Auth:
             f.append(time.time())
             self.fails[ip] = f
             return None
-        return self.issue(username, u["role"])
+        return self.issue(username, u["role"], u.get("station", ""), u.get("name", username))
 
     # ------------------------------------------------------------------------------------------------------------
     def role_of(self, request: Request | WebSocket) -> str:

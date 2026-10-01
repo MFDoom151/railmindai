@@ -184,7 +184,7 @@ function renderTrainCard(f, plan) {
     <div class="r"><span>${t('d_td_sched')}</span><b class="num">${hhmm(tr.sa)} → ${hhmm(tr.sd)}</b></div>
     <div class="r"><span>${t('d_td_eta')}</span><b class="num">${hhmm(tr.eta)}</b></div>
     ${it ? `<div class="r"><span>${t('d_td_plan')}</span><b class="num">${t('d_td_track')} ${it.track ?? '—'} · ${hhmm(it.arr)} → ${hhmm(it.dep)}</b></div>
-    <div class="r"><span>${t('d_td_late')}</span><b class="num" style="color:${it.late >= 20 ? '#ec8b87' : it.late >= 8 ? '#e6bf72' : '#8fd0b1'}">+${it.late} мин</b></div>
+    <div class="r"><span>${t('d_td_late')}</span><b class="num" style="color:${it.late >= 20 ? '#b8352e' : it.late >= 8 ? '#8a5a00' : '#0f6d49'}">+${it.late} мин</b></div>
     ${it.ops.length ? `<div class="r"><span>${t('d_td_ops')}</span><b></b></div>` + it.ops.map(o => `<div class="r"><span>${t('opn_' + o.kind)}</span><b class="num">${hhmm(o.start)}–${hhmm(o.end)}${o.loco ? ' · ' + o.loco.replace('ЧМЭ3-', 'ЧМЭ-') : ''}</b></div>`).join('') : ''}` : ''}`;
   $('#dTrainX').onclick = () => selectTrain(null);
 }
@@ -324,11 +324,8 @@ async function doLogin() {
 function logout() { D.auth = { ...D.auth, role: 'viewer', token: null, user: null }; try { sessionStorage.removeItem('rt_tok'); } catch (e) {} $('#authModal').classList.remove('on'); renderAuth(); }
 async function restoreAuth() {
   let tok = null; try { tok = sessionStorage.getItem('rt_tok'); } catch (e) {}
-  if (!tok) {                                           // открытый демо-режим: сервер сам выдаёт роль диспетчера
-    try { const i = await api('/api/v1/auth/info'); if (i.open_demo && i.role === 'dispatcher') { D.auth = { ...D.auth, role: 'dispatcher', user: 'demo', open: true }; renderAuth(); } } catch (e) {}
-    return;
-  }
-  try { const i = await api('/api/v1/auth/info', { headers: { Authorization: 'Bearer ' + tok } }); if (i.role !== 'viewer') { D.auth = { ...D.auth, role: i.role, token: tok, user: i.role }; renderAuth(); } } catch (e) {}
+  if (!tok) return;                                     // гость: только просмотр
+  try { const i = await api('/api/v1/auth/info', { headers: { Authorization: 'Bearer ' + tok } }); if (i.role !== 'viewer') { D.auth = { ...D.auth, role: i.role, token: tok, user: i.name || i.role }; renderAuth(); } else { try { sessionStorage.removeItem('rt_tok'); } catch (e) {} } } catch (e) {}
 }
 
 async function openSettings() {
@@ -350,8 +347,8 @@ async function openSettings() {
     const g = (id) => +$('#' + id).value; const weights = {}; for (const k of names) weights[k] = g('sw_' + k);
     const patch = { index: { weights, thresholds: { norm: g('st_norm'), attention: g('st_att') } }, planner: { time_limit_s: g('sp_tl'), w_late: g('sp_wl'), w_wait: g('sp_ww'), w_change: g('sp_wc'), headway_min: g('sp_hw'), engine: $('#sp_eng').value },
       sim: { time_scale: g('ss_scale'), noise: { dup_rate: g('ss_dup'), invalid_rate: g('ss_inv'), reorder_rate: g('ss_reo') } } };
-    try { await api('/api/v1/config', { method: 'PUT', body: { patch } }); $('#setMsg').textContent = t('d_saved'); $('#setMsg').style.color = '#8fd0b1'; toast(t('d_saved'), 'ok'); stream.connect(D.station); }
-    catch (e) { $('#setMsg').style.color = '#ec8b87'; $('#setMsg').textContent = e.status === 422 ? JSON.stringify(e.detail.detail).slice(0, 300) : String(e.message); }
+    try { await api('/api/v1/config', { method: 'PUT', body: { patch } }); $('#setMsg').textContent = t('d_saved'); $('#setMsg').style.color = '#0f6d49'; toast(t('d_saved'), 'ok'); stream.connect(D.station); }
+    catch (e) { $('#setMsg').style.color = '#b8352e'; $('#setMsg').textContent = e.status === 422 ? JSON.stringify(e.detail.detail).slice(0, 300) : String(e.message); }
   };
   $('#setReset').onclick = async () => { try { await api('/api/v1/config/override', { method: 'DELETE' }); toast(t('d_saved'), 'ok'); $('#setModal').classList.remove('on'); stream.connect(D.station); } catch (e) { toast(String(e.message), 'crit'); } };
 }
@@ -364,6 +361,7 @@ function connect(station) {
 
 export function initDash({ stations }) {
   D.stations = stations;
+  try { const u = JSON.parse(sessionStorage.getItem('rt_user') || 'null'); if (u && u.station && stations.some(x => x.id === u.station)) D.station = u.station; } catch (e) {}
   scheme = new Scheme($('#dScheme'), { onSelect: selectTrain });
   diagram = new Diagram($('#dDiagram'), { onSelect: selectTrain });
   indexw = new IndexWidget($('#dIndex'), { onFormula: openFormula });
@@ -389,6 +387,7 @@ export function initDash({ stations }) {
     activate(on) { D.active = on; if (on) { diagram._size(); diagram.draw(); schedule(); } },
     relabel() { fill(); indexw.relabel(); buildKinds(); renderThr(); renderAuth(); renderAlts(); renderAlerts(); onStatus(D.status.state ? D.status : { state: 'connecting', transport: 'ws', attempt: 0 }); schedule(); diagram.rows = null; diagram.draw(); },
     station: () => D.station,
+    select(id) { if (D.stations.some(x => x.id === id) && id !== D.station) { $('#dStation').value = id; connect(id); } },
     stream: () => stream,
     state: () => D,
   };

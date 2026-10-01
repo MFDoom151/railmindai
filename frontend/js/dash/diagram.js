@@ -53,15 +53,15 @@ export class Diagram {
     // фон строк и подписи
     rows.forEach((r, i) => {
       const yy = rowY[r.key];
-      ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.012)' : 'rgba(255,255,255,.03)'; ctx.fillRect(L, yy, W - L - R, rh);
-      ctx.fillStyle = r.kind === 'sorting' ? '#aaa8cf' : r.kind === 'receiption' ? '#7fa9d6' : r.kind === 'loco' ? '#cf9a3a' : r.kind === 'throat' ? '#8190a3' : '#9fb2c8';
-      if (r.kind === 'reception') ctx.fillStyle = '#7fa9d6';
+      ctx.fillStyle = i % 2 ? 'rgba(16,36,61,.025)' : 'rgba(16,36,61,.055)'; ctx.fillRect(L, yy, W - L - R, rh);
+      ctx.fillStyle = r.kind === 'sorting' ? '#5a58a0' : r.kind === 'receiption' ? '#1a5fb4' : r.kind === 'loco' ? '#9a6208' : r.kind === 'throat' ? '#5f7591' : '#4a6283';
+      if (r.kind === 'reception') ctx.fillStyle = '#1a5fb4';
       ctx.textAlign = 'right'; ctx.fillText(r.label, L - 8, yy + rh / 2);
     });
     // область прошлого + сетка
-    ctx.fillStyle = 'rgba(8,12,18,.35)'; ctx.fillRect(L, T, Math.max(0, X(now) - L), H - T - B);
+    ctx.fillStyle = 'rgba(16,36,61,.07)'; ctx.fillRect(L, T, Math.max(0, X(now) - L), H - T - B);
     const step = this.ahead > 240 ? 60 : 30;
-    ctx.strokeStyle = 'rgba(120,145,175,.14)'; ctx.lineWidth = 1; ctx.fillStyle = '#8190a3'; ctx.textAlign = 'center';
+    ctx.strokeStyle = 'rgba(60,90,130,.16)'; ctx.lineWidth = 1; ctx.fillStyle = '#5f7591'; ctx.textAlign = 'center';
     for (let m = Math.ceil(t0 / step) * step; m <= t1; m += step) { const x = Math.round(X(m)) + .5; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, H - B); ctx.stroke(); ctx.fillText(hhmm(m), x, 9); }
     // закрытия и ТО
     const hatch = (x0, x1, yy, col, fillCol) => {
@@ -89,7 +89,7 @@ export class Diagram {
         ctx.fillStyle = `rgba(${rgb},.20)`; ctx.fillRect(bx, yy + 2, bw, rh - 4);
         // факт: до линии «сейчас»
         if (pastX > bx) { ctx.fillStyle = `rgba(${rgb},.78)`; ctx.fillRect(bx, yy + 2, pastX - bx, rh - 4); }
-        ctx.lineWidth = sel ? 2 : 1; ctx.strokeStyle = sel ? '#ffffff' : isBad ? '#e0645f' : `rgba(${rgb},.95)`; ctx.strokeRect(bx + .5, yy + 2.5, bw - 1, rh - 5);
+        ctx.lineWidth = sel ? 2 : 1; ctx.strokeStyle = sel ? '#10243d' : isBad ? '#e0645f' : `rgba(${rgb},.95)`; ctx.strokeRect(bx + .5, yy + 2.5, bw - 1, rh - 5);
         // операции
         for (const o of it.ops || []) {
           const a = Math.max(bx, X(o.start)), b = Math.min(bx + bw, X(o.end)); if (b <= a) continue;
@@ -103,7 +103,7 @@ export class Diagram {
           if (o.kind !== 'INSPECT') { const lx = X(o.start), lw = Math.max(2, X(o.start + 4) - lx); ctx.fillStyle = 'rgba(207,154,58,.75)'; ctx.fillRect(Math.max(L, lx), rowY.L + 3, lw, rh - 6); }
         }
         // метка поезда
-        if (bw > 30 && !it.transit) { ctx.fillStyle = '#e6ebf2'; ctx.textAlign = 'left'; ctx.fillText(it.id, bx + 4, yy + rh / 2 - 2); }
+        if (bw > 30 && !it.transit) { ctx.fillStyle = '#10243d'; ctx.textAlign = 'left'; ctx.fillText(it.id, bx + 4, yy + rh / 2 - 2); }
         // опоздание (красный хвост у верхней кромки) и ожидание на подходе
         if (it.late > 0) { const a = Math.max(L, X(it.sched_dep)); ctx.fillStyle = '#e0645f'; ctx.fillRect(a, yy + 1, Math.max(2, x1 - a), 2.5); ctx.fillRect(a, yy + 1, 1.5, 6); }
         if (it.arr > it.eta + 0.5) { ctx.strokeStyle = '#d1a03c'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Math.max(L, X(it.eta)), yy + rh / 2); ctx.lineTo(bx, yy + rh / 2); ctx.stroke(); ctx.setLineDash([]); }
@@ -125,8 +125,8 @@ export class Diagram {
       for (const k of keys) { const yy = rowY[k]; if (yy == null) continue; const a = Math.max(L, X(c.t_from)), b = Math.min(W - R, X(Math.max(c.t_to, c.t_from + 2))); if (b > a) { ctx.fillStyle = c.severity === 'crit' ? 'rgba(224,100,95,.30)' : 'rgba(209,160,60,.22)'; ctx.fillRect(a, yy, b - a, rh); ctx.strokeStyle = c.severity === 'crit' ? '#e0645f' : '#d1a03c'; ctx.lineWidth = 1; ctx.strokeRect(a + .5, yy + .5, b - a - 1, rh - 1); } }
     }
     // линия «сейчас»
-    const nx = Math.round(X(now)) + .5; ctx.strokeStyle = '#e6ebf2'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(nx, T - 2); ctx.lineTo(nx, H - B); ctx.stroke();
-    ctx.fillStyle = '#e6ebf2'; ctx.textAlign = 'left'; ctx.font = '600 10px "Segoe UI"'; ctx.fillText(t('d_dg_now') + ' ' + hhmm(now), nx + 4, T - 8 + 8); ctx.font = '11px "Segoe UI"';
+    const nx = Math.round(X(now)) + .5; ctx.strokeStyle = '#0d4a9c'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(nx, T - 2); ctx.lineTo(nx, H - B); ctx.stroke();
+    ctx.fillStyle = '#0d4a9c'; ctx.textAlign = 'left'; ctx.font = '600 10px "Segoe UI"'; ctx.fillText(t('d_dg_now') + ' ' + hhmm(now), nx + 4, T - 8 + 8); ctx.font = '11px "Segoe UI"';
   }
 
   _hit(e) {

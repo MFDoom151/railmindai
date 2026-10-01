@@ -46,7 +46,7 @@ export class Scheme {
     // платформы и подписи парков
     for (const t of infra.tracks) {
       const tr = this.tracks[t.idx]; if (!tr) continue;
-      if (t.platform) el('rect', { x: tr.x0 + 4, y: Y(tr.z) + 3, width: tr.x1 - tr.x0 - 8, height: 4, rx: 1, fill: '#2a3a4e' }, bg);
+      if (t.platform) el('rect', { x: tr.x0 + 4, y: Y(tr.z) + 3, width: tr.x1 - tr.x0 - 8, height: 4, rx: 1, fill: '#c3d1e2' }, bg);
     }
     // главный путь и подход
     el('line', { x1: -168, y1: 0, x2: 168, y2: 0, class: 'rail main' }, lines);

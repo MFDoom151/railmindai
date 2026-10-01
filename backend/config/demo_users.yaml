@@ -1,0 +1,8 @@
+# Демонстрационные рабочие места диспетчеров для жюри (синтетические учётные записи, реальных данных нет).
+# Отключаются переменной окружения RAILTWIN_DEMO_USERS=0. Реальные учётные записи задаются только через
+# переменные окружения (RAILTWIN_ADMIN_*, RAILTWIN_DISPATCHERS="логин:пароль:станция:Имя;...").
+users:
+  - {login: dsp.almaty, password: Almaty-2026, role: dispatcher, station: almaty1, name: "Диспетчер ст. Алматы-1"}
+  - {login: dsp.shu, password: Shu-2026, role: dispatcher, station: shu, name: "Диспетчер ст. Шу"}
+  - {login: dsp.astana, password: Astana-2026, role: dispatcher, station: astana, name: "Диспетчер ст. Астана"}
+  - {login: dsp.karaganda, password: Karaganda-2026, role: dispatcher, station: karaganda, name: "Диспетчер ст. Қарағанды"}

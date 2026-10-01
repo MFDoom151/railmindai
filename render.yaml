@@ -8,8 +8,8 @@ services:
     envVars:
       - key: RAILTWIN_DEV
         value: "0"
-      - key: RAILTWIN_OPEN_DEMO          # посетитель без входа = диспетчер (для жюри)
-        value: "1"
+      - key: RAILTWIN_OPEN_DEMO          # 0 — без входа только просмотр; жюри входит под демо-диспетчером (backend/config/demo_users.yaml)
+        value: "0"
       - key: RAILTWIN_SECRET
         generateValue: true
       - key: RAILTWIN_ADMIN_USER

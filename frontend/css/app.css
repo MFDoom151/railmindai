@@ -1,15 +1,15 @@
-/* KTZ Executive Slate — строгая корпоративная тема ситуационного центра */
+/* RailMind AI — светлая корпоративная тема */
 :root {
-  --bg: #0e141c; --surface: #141c27; --surface-2: #19232f; --surface-3: #1f2b39;
-  --line: #263446; --line-2: #34465c;
-  --tx: #dde4ed; --tx-2: #aab6c6; --mu: #8190a3; --faint: #5b6a7e;
-  --accent: #5b8fc9; --accent-2: #7aa7d9; --accent-bg: rgba(91,143,201,.12); --brand: #1f4e8c;
-  --ok: #4aa37a; --warn: #cf9a3a; --crit: #c9534f; --ok-bg: rgba(74,163,122,.12); --warn-bg: rgba(207,154,58,.12); --crit-bg: rgba(201,83,79,.14);
+  --bg: #e9f0f8; --surface: #ffffff; --surface-2: #f3f7fc; --surface-3: #e6eef8;
+  --line: #d3deec; --line-2: #b9c9dd;
+  --tx: #10243d; --tx-2: #34506e; --mu: #5f7591; --faint: #8497ae;
+  --accent: #1a6fd1; --accent-2: #0d5bb5; --accent-bg: rgba(26,111,209,.10); --brand: #0d4a9c;
+  --ok: #1d9a68; --warn: #d99a14; --crit: #d2453c; --ok-bg: rgba(29,154,104,.12); --warn-bg: rgba(217,154,20,.15); --crit-bg: rgba(210,69,60,.12);
   --font: "Segoe UI", Inter, system-ui, -apple-system, Roboto, Arial, sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--tx); font: 13px/1.4 var(--font); display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
+body { background: linear-gradient(180deg, #eef4fb 0%, #dce8f5 100%) fixed; color: var(--tx); font: 13px/1.4 var(--font); display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
 .num, .mono { font-variant-numeric: tabular-nums; }
 .mono { font-family: Consolas, "Cascadia Mono", monospace; }
 button { font: inherit; color: inherit; }

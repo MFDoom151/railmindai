@@ -11,8 +11,8 @@ const HU = { ru: 'ч', kz: 'сағ', en: 'h' };
 const COL = { green: '#3f9d78', yellow: '#d1a03c', red: '#cf5a54' };
 const OPCOL = { ROSPUSK: '#5b8fc9', PODFORM: '#4aa37a', RASSTANOVKA: '#cf9a3a' };
 const CAUSECOL = { TRACK: '#5b8fc9', LOCO: '#cf9a3a', CREW: '#8f8fb5', ROUTE: '#c9534f' };
-const AX = { axisLine: { lineStyle: { color: '#2f4157' } }, axisLabel: { color: '#8190a3', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(47,65,87,.5)' } } };
-const TIP = { backgroundColor: '#141c27', borderColor: '#34465c', textStyle: { color: '#dde4ed', fontSize: 11.5 } };
+const AX = { axisLine: { lineStyle: { color: '#c3d1e2' } }, axisLabel: { color: '#5f7591', fontSize: 10 }, splitLine: { lineStyle: { color: '#e1e9f3' } } };
+const TIP = { backgroundColor: '#ffffff', borderColor: '#b9c9dd', textStyle: { color: '#10243d', fontSize: 11.5 } };
 
 const S = { view: 'A', net: null, sel: 'almaty1', st: null, twinLoading: null, scene: null, plan: null, lastSim: null, charts: {}, local: [], backendLog: [],
   alertTrack: null, layer: 'ops', pane: 'sim', tel: null, dis: null, disAlt: null, simBusy: false, mapMode: 'scheme', fc: {} };
@@ -74,17 +74,27 @@ function renderHot() {
 
 // ===================== виды и вкладки =====================
 function showView(v) {
-  S.view = v;
+  S.view = v; if (v !== 'D') S.lastObs = v;
   $('#viewD').style.display = v === 'D' ? 'flex' : 'none'; $('#viewA').style.display = v === 'A' ? 'flex' : 'none'; $('#viewB').style.display = v === 'B' ? 'flex' : 'none';
-  $('#tabD').classList.toggle('on', v === 'D'); $('#tabA').classList.toggle('on', v === 'A'); $('#tabB').classList.toggle('on', v === 'B');
-  $('#demoBar').style.display = v === 'D' ? 'none' : '';
+  $('#tabObs').classList.toggle('on', v !== 'D'); $('#tabCtl').classList.toggle('on', v === 'D');
+  $('#subnav').style.display = v === 'D' ? 'none' : 'flex'; $('#subA').classList.toggle('on', v === 'A'); $('#subB').classList.toggle('on', v === 'B');
+  $('#demoBar').style.display = v === 'B' ? '' : 'none'; $('#demoBar').title = t('sandbox_h');
   map.paused = v !== 'A'; if (S.scene) S.scene.paused = v !== 'B';
   if (S.dash) S.dash.activate(v === 'D');
   if (v === 'A') map.resize(); else if (v === 'B') { S.scene && S.scene.resize(); resizeCharts(); }
+  showHint(v);
 }
-$('#tabD').onclick = () => showView('D');
-$('#tabA').onclick = () => { showView('A'); map.resetView(); };
-$('#tabB').onclick = () => openStation(S.st ? S.st.id : S.sel);
+// Подсказка «что на этом экране»: одна строка, закрывается и больше не мешает в рамках сессии
+function showHint(v) {
+  const h = $('#hint'); let seen = false; try { seen = sessionStorage.getItem('rt_hint_' + v) === '1'; } catch (e) {}
+  $('#hintTxt').textContent = t('hint_' + v); h.style.display = seen ? 'none' : 'flex'; h.dataset.v = v;
+}
+$('#hintX').onclick = () => { const h = $('#hint'); try { sessionStorage.setItem('rt_hint_' + h.dataset.v, '1'); } catch (e) {} h.style.display = 'none'; };
+$('#tabObs').onclick = () => { if (S.view === 'D') showView(S.lastObs || 'A'); };
+$('#tabCtl').onclick = () => showView('D');
+$('#subA').onclick = () => { showView('A'); map.resetView(); };
+$('#subB').onclick = () => openStation(S.st ? S.st.id : S.sel);
+$('#toCtl').onclick = () => { const id = S.view === 'B' && S.st ? S.st.id : S.sel; if (id && S.dash) S.dash.select(id); showView('D'); };
 function setPane(p) {
   S.pane = p; $$('#sideTabs button').forEach(b => b.classList.toggle('on', b.dataset.pane === p)); $$('.pane').forEach(x => x.classList.toggle('on', x.id === 'pane-' + p));
   requestAnimationFrame(resizeCharts);
@@ -204,7 +214,7 @@ function renderResources(a) {
     if (k === 'TRACK') { out.push(t('rs_detail_track', { r: d.recv_free, s: d.sort_free })); if (d.blocked.length) out.push(t('rs_detail_blocked', { b: d.blocked.join(',') })); }
     if (k === 'CREW' && d.absent) out.push(t('rs_detail_absent', { n: d.absent }));
     if (k === 'ROUTE' && d.active.length) out.push(t('rs_detail_route', { a: d.active.join(',') }));
-    if (it.waiting) out.push(`<b style="color:#ec8b87">${t('rs_waiting', { n: it.waiting })}</b>`);
+    if (it.waiting) out.push(`<b style="color:#b8352e">${t('rs_waiting', { n: it.waiting })}</b>`);
     return out.join(' · ');
   };
   const tiles = names.map(k => { const it = a.resources[k];
@@ -268,14 +278,14 @@ function chart(id) { const el = document.getElementById(id); let c = S.charts[id
 function drawSimCharts() {
   const { res, sweep, dp } = S.lastSim; const hrs = [...Array(24).keys()].map(h => String(h).padStart(2, '0') + ':00');
   chart('chQueue').setOption({ animationDuration: 400, grid: { left: 34, right: 36, top: 22, bottom: 22 }, tooltip: { trigger: 'axis', ...TIP },
-    legend: { top: 0, textStyle: { color: '#8190a3', fontSize: 10 }, itemWidth: 12, itemHeight: 6 },
+    legend: { top: 0, textStyle: { color: '#5f7591', fontSize: 10 }, itemWidth: 12, itemHeight: 6 },
     xAxis: { type: 'category', data: hrs, ...AX, axisLabel: { ...AX.axisLabel, interval: 3 } }, yAxis: [{ type: 'value', ...AX }, { type: 'value', max: 100, ...AX, splitLine: { show: false } }],
     series: [{ name: t('s_queue'), type: 'line', smooth: true, showSymbol: false, data: res.hourlyQ.map(v => +v.toFixed(2)), lineStyle: { color: '#5b8fc9', width: 2 }, areaStyle: { color: 'rgba(91,143,201,.15)' } },
       { name: t('s_util'), type: 'line', yAxisIndex: 1, smooth: true, showSymbol: false, data: res.hourlyU.map(v => +v.toFixed(0)), lineStyle: { color: '#cf9a3a', width: 2 } }] }, true);
   chart('chCrews').setOption({ animationDuration: 400, grid: { left: 34, right: 12, top: 14, bottom: 22 }, tooltip: { trigger: 'axis', ...TIP },
     xAxis: { type: 'category', data: sweep.map(s => s.crews), ...AX }, yAxis: { type: 'value', ...AX },
-    series: [{ type: 'bar', barWidth: '46%', data: sweep.map(s => ({ value: +s.thr.toFixed(1), itemStyle: { color: s.crews === Math.min(dp.crews, dp.locos) ? '#5b8fc9' : '#2f4666', borderRadius: [3, 3, 0, 0] } })), label: { show: true, position: 'top', color: '#8190a3', fontSize: 10 },
-      markLine: { silent: true, symbol: 'none', lineStyle: { color: '#c9534f', type: 'dashed' }, label: { color: '#e3a7a4', fontSize: 10, formatter: () => (dp.lambda * 24).toFixed(0) + ' ' + t('u_day') }, data: [{ yAxis: dp.lambda * 24 }] } }] }, true);
+    series: [{ type: 'bar', barWidth: '46%', data: sweep.map(s => ({ value: +s.thr.toFixed(1), itemStyle: { color: s.crews === Math.min(dp.crews, dp.locos) ? '#5b8fc9' : '#a9bfdc', borderRadius: [3, 3, 0, 0] } })), label: { show: true, position: 'top', color: '#8190a3', fontSize: 10 },
+      markLine: { silent: true, symbol: 'none', lineStyle: { color: '#c9534f', type: 'dashed' }, label: { color: '#b8352e', fontSize: 10, formatter: () => (dp.lambda * 24).toFixed(0) + ' ' + t('u_day') }, data: [{ yAxis: dp.lambda * 24 }] } }] }, true);
 }
 
 // ===================== прогноз =====================
@@ -289,11 +299,11 @@ function drawForecast(which, f) {
   const cats = f.series.map(p => p.t === 0 ? t('fc_now') : '+' + p.t + h); const lo = f.series.map(p => p.lo), band = f.series.map(p => +(p.hi - p.lo).toFixed(2));
   const mark = [2, 6, 12].map(k => ({ coord: [k, f.series[k].opt], value: f.series[k].opt.toFixed(1), label: { show: true, formatter: '+' + k + h + '\n' + f.series[k].opt.toFixed(1), color: '#dde4ed', fontSize: 10, offset: [0, -16] } }));
   c.setOption({ animationDuration: 500, grid: { left: 40, right: 14, top: 34, bottom: 24 }, tooltip: { trigger: 'axis', ...TIP },
-    legend: { top: 2, textStyle: { color: '#8190a3', fontSize: 10 }, itemWidth: 14, itemHeight: 6, data: [t('fc_base'), t('fc_opt')] },
+    legend: { top: 2, textStyle: { color: '#5f7591', fontSize: 10 }, itemWidth: 14, itemHeight: 6, data: [t('fc_base'), t('fc_opt')] },
     xAxis: { type: 'category', data: cats, boundaryGap: false, ...AX }, yAxis: { type: 'value', scale: true, ...AX },
     series: [{ type: 'line', name: 'lo', data: lo, stack: 'b', symbol: 'none', lineStyle: { opacity: 0 }, tooltip: { show: false }, silent: true },
       { type: 'line', name: 'band', data: band, stack: 'b', symbol: 'none', lineStyle: { opacity: 0 }, areaStyle: { color: 'rgba(91,143,201,.14)' }, tooltip: { show: false }, silent: true },
-      { type: 'line', name: t('fc_base'), data: f.series.map(p => p.base), smooth: true, showSymbol: false, lineStyle: { color: '#8190a3', width: 2, type: 'dashed' } },
+      { type: 'line', name: t('fc_base'), data: f.series.map(p => p.base), smooth: true, showSymbol: false, lineStyle: { color: '#7a8ea8', width: 2, type: 'dashed' } },
       { type: 'line', name: t('fc_opt'), data: f.series.map(p => p.opt), smooth: true, showSymbol: false, lineStyle: { color: f.optimized ? '#4aa37a' : '#5b8fc9', width: 2.5 },
         markPoint: { symbol: 'circle', symbolSize: 8, itemStyle: { color: '#5b8fc9', borderColor: '#fff', borderWidth: 1.5 }, data: mark },
         markLine: { silent: true, symbol: 'none', lineStyle: { color: 'rgba(129,144,163,.35)', type: 'dotted' }, label: { show: false }, data: [{ xAxis: 2 }, { xAxis: 6 }, { xAxis: 12 }] } }] }, true);
@@ -304,13 +314,13 @@ function drawGantt(id, schedule, { min = 0, max = 1440, now = null, nLocos = 1 }
   const c = chart(id); const cats = [...Array(nLocos).keys()].map(i => 'ЧМЭ3-' + (i + 1));
   const data = schedule.map(s => ({ value: [s.loco - 1, s.start, s.end, s.op, s.from, s.to, s.wagons], itemStyle: { color: OPCOL[s.op] || '#5b8fc9' } }));
   c.setOption({ animation: false, grid: { left: 58, right: 14, top: 8, bottom: 38 }, tooltip: { ...TIP, formatter: (p) => p.value ? `<b>${t('op_' + p.value[3])}</b><br>${t('ai_task_tip', { op: fmtMin(p.value[1]) + '–' + fmtMin(p.value[2]), from: p.value[4], to: p.value[5], wagons: p.value[6] })}` : '' },
-    legend: { bottom: 0, textStyle: { color: '#8190a3', fontSize: 10 }, itemWidth: 10, itemHeight: 8, data: Object.keys(OPCOL).map(k => ({ name: t('op_' + k), itemStyle: { color: OPCOL[k] } })) },
+    legend: { bottom: 0, textStyle: { color: '#5f7591', fontSize: 10 }, itemWidth: 10, itemHeight: 8, data: Object.keys(OPCOL).map(k => ({ name: t('op_' + k), itemStyle: { color: OPCOL[k] } })) },
     xAxis: { type: 'value', min, max, interval: Math.max(30, Math.round((max - min) / 6 / 30) * 30), ...AX, axisLabel: { ...AX.axisLabel, formatter: (v) => fmtMin(v) } },
     yAxis: { type: 'category', data: cats, inverse: true, ...AX, splitLine: { show: false } },
     series: [{ type: 'custom', name: 'ops', data, encode: { x: [1, 2], y: 0 }, renderItem: (params, api) => { const cat = api.value(0); const a = api.coord([api.value(1), cat]), b = api.coord([api.value(2), cat]); const hh = api.size([0, 1])[1] * 0.58;
         return { type: 'rect', shape: { x: a[0], y: a[1] - hh / 2, width: Math.max(1.5, b[0] - a[0]), height: hh, r: 2 }, style: api.style() }; } },
       ...Object.keys(OPCOL).map(k => ({ type: 'bar', name: t('op_' + k), data: [], itemStyle: { color: OPCOL[k] } })),
-      ...(now != null ? [{ type: 'scatter', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#e6ebf2', type: 'dashed', width: 1 }, label: { formatter: t('ai_now'), color: '#e6ebf2', fontSize: 10, position: 'insideEndTop' }, data: [{ xAxis: now }] } }] : [])] }, true);
+      ...(now != null ? [{ type: 'scatter', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#10243d', type: 'dashed', width: 1 }, label: { formatter: t('ai_now'), color: '#e6ebf2', fontSize: 10, position: 'insideEndTop' }, data: [{ xAxis: now }] } }] : [])] }, true);
 }
 
 // ===================== AI-график =====================
@@ -438,8 +448,8 @@ function renderFeed() {
 }
 async function renderShoes() {
   if (!S.st) return; let snap; try { snap = await api('/api/safety/state/' + S.st.id); } catch (e) { return; }
-  const uns = (snap.unsecured || []).map(tk => `<div class="step no" style="display:flex;justify-content:space-between"><span>${t('saf_unsec_row', { track: tk })}</span><b style="color:#ec8b87">IoT</b></div>`).join('');
-  $('#shoeList').innerHTML = uns + (snap.shoes.length ? snap.shoes.map(s => `<div class="step no" style="display:flex;justify-content:space-between"><span>${t('saf_shoe_row', { shoe: s.id, track: s.track, rfid: s.rfid })}</span><b style="color:#ec8b87">${t('saf_onrail')}</b></div>`).join('') : (uns ? '' : `<div class="step yes">✓ ${t('saf_none')}</div>`));
+  const uns = (snap.unsecured || []).map(tk => `<div class="step no" style="display:flex;justify-content:space-between"><span>${t('saf_unsec_row', { track: tk })}</span><b style="color:#b8352e">IoT</b></div>`).join('');
+  $('#shoeList').innerHTML = uns + (snap.shoes.length ? snap.shoes.map(s => `<div class="step no" style="display:flex;justify-content:space-between"><span>${t('saf_shoe_row', { shoe: s.id, track: s.track, rfid: s.rfid })}</span><b style="color:#b8352e">${t('saf_onrail')}</b></div>`).join('') : (uns ? '' : `<div class="step yes">✓ ${t('saf_none')}</div>`));
 }
 function showAlert(title, text, ok = false) { const a = $('#alertBox'); a.className = 'alert' + (ok ? ' ok' : ''); a.innerHTML = `<div class="t">${title}</div><div class="d">${text}</div>`; a.style.display = ''; }
 function hideAlert() { $('#alertBox').style.display = 'none'; $('#btnRemove').style.display = 'none'; $('#btnSecure').style.display = 'none'; S.alertTrack = null; }
@@ -517,9 +527,9 @@ $('#btnAI2').onclick = runAI; $('#btnAIreset').onclick = resetAI; $('#btnHostile
 
 // ===================== язык / часы =====================
 $$('.langs button').forEach(b => { b.onclick = () => setLang(b.dataset.lang); });
-function markLang() { $$('.langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === getLang())); }
+function markLang() { try { showHint(S.view); renderUserChip(); $('#demoBar').title = t('sandbox_h'); } catch (e) {} $$('.langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === getLang())); }
 document.addEventListener('langchange', () => {
-  if (S.dash) S.dash.relabel();
+  if (S.dash) S.dash.relabel(); try { renderLgChart(); } catch (e) {}
   markLang(); renderLegend(); renderNetList(); updateProbBtn(); renderProfile(); renderDisButtons(); renderHot(); if (S.st) { fillStationSelect(); renderShoes(); } renderAI(); applyParams(); renderFeed(); renderLayerInfo();
   renderResources(S.tel); if (S.dis) renderDisResult(); if (S.lastSim) renderSim(); for (const k in S.fc) drawForecast(k, S.fc[k]);
 });
@@ -533,4 +543,65 @@ setInterval(() => { if (!document.hidden) refreshNetwork(); }, 5000);
 setInterval(() => { if (!document.hidden) { if (S.view === 'B') renderShoes(); refreshLog(); } }, 5000);
 window.__rt = S;
 S.open = openStation; S.runScenario = runStationScenario;
-fetch('/api/v1/stations').then(r => r.json()).then(list => { S.dash = initDash({ stations: list }); showView('D'); }).catch(() => { showView('A'); });
+// ===================== вход и рабочее место =====================
+const U = {
+  user() { try { return JSON.parse(sessionStorage.getItem('rt_user') || 'null'); } catch (e) { return null; } },
+  token() { try { return sessionStorage.getItem('rt_tok'); } catch (e) { return null; } },
+};
+const ROLE_RU = { dispatcher: 'd_role_dispatcher', admin: 'd_role_admin', viewer: 'd_role_viewer' };
+function renderUserChip() {
+  const u = U.user(), tok = U.token();
+  $('#uName').textContent = tok && u ? u.name || u.user : t('u_guest');
+  $('#uRole').textContent = tok && u ? t(ROLE_RU[u.role] || 'd_role_viewer') : '';
+  $('#uRole').style.display = tok && u ? '' : 'none';
+  $('#uBtn').textContent = tok ? t('u_signout') : t('u_signin');
+}
+$('#uBtn').onclick = () => {
+  try { if (U.token()) { sessionStorage.removeItem('rt_tok'); sessionStorage.removeItem('rt_user'); } sessionStorage.removeItem('rt_guest'); } catch (e) {}
+  location.reload();
+};
+$('#lgForm').onsubmit = async (e) => {
+  e.preventDefault(); $('#lgErr').style.display = 'none';
+  try {
+    const r = await fetch('/api/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: $('#lgUser').value.trim(), password: $('#lgPass').value }) });
+    if (!r.ok) throw new Error(r.status); const d = await r.json();
+    sessionStorage.setItem('rt_tok', d.token); sessionStorage.setItem('rt_user', JSON.stringify({ user: d.user, name: d.name, role: d.role, station: d.station })); sessionStorage.removeItem('rt_guest');
+    location.reload();
+  } catch (err) { $('#lgErr').style.display = ''; }
+};
+$('#lgGuest').onclick = () => { try { sessionStorage.setItem('rt_guest', '1'); } catch (e) {} document.documentElement.classList.add('authed'); renderUserChip(); };
+function renderLgChart() {
+  const el = $('#lgChart'); if (!el || !window.echarts) return;
+  const c = window.echarts.getInstanceByDom(el) || window.echarts.init(el);
+  const hrs = Array.from({ length: 25 }, (_, i) => 6 + i * 0.5), lab = hrs.map(h => `${String(Math.floor(h)).padStart(2, '0')}:${h % 1 ? '30' : '00'}`);
+  const base = hrs.map(h => 88 + 3 * Math.sin(h * 1.7));
+  const fail = base.map((v, i) => hrs[i] < 10 ? v : Math.max(38, v - 52 * (1 - Math.exp(-(hrs[i] - 10) * 1.3)) + (hrs[i] > 15 ? (hrs[i] - 15) * 1.6 : 0)));
+  const fix = base.map((v, i) => hrs[i] < 10 ? v : (hrs[i] < 10.5 ? v - 34 * (1 - (hrs[i] - 10) / 0.5 * 0.75) : v - 9 * Math.exp(-(hrs[i] - 10.5) * 0.9)));
+  c.setOption({
+    animationDuration: 1400, grid: { left: 34, right: 12, top: 40, bottom: 26 },
+    legend: { top: 0, left: 0, itemWidth: 14, itemHeight: 3, textStyle: { color: '#3b4f68', fontSize: 11.5 } },
+    tooltip: { trigger: 'axis', valueFormatter: (v) => v.toFixed(0) },
+    xAxis: { type: 'category', data: lab, boundaryGap: false, axisLabel: { color: '#667a93', interval: 3 }, axisLine: { lineStyle: { color: '#c3d1e2' } } },
+    yAxis: { type: 'value', min: 30, max: 100, splitLine: { lineStyle: { color: '#e1e9f3' } }, axisLabel: { color: '#667a93' } },
+    series: [
+      { name: t('lg_s1'), type: 'line', smooth: true, showSymbol: false, data: fail.map(v => +v.toFixed(1)), lineStyle: { color: '#d2453c', width: 2.5 }, areaStyle: { color: 'rgba(210,69,60,.10)' },
+        markLine: { symbol: 'none', silent: true, lineStyle: { color: '#8a9bb0', type: 'dashed' }, label: { formatter: '10:00', color: '#667a93', position: 'insideEndBottom' }, data: [{ xAxis: '10:00' }] } },
+      { name: t('lg_s2'), type: 'line', smooth: true, showSymbol: false, data: fix.map(v => +v.toFixed(1)), lineStyle: { color: '#1a6fd1', width: 3 }, areaStyle: { color: 'rgba(26,111,209,.14)' } },
+    ],
+  }, true);
+  setTimeout(() => c.resize(), 60);
+}
+async function initLanding() {
+  renderUserChip(); renderLgChart(); window.addEventListener('resize', () => { try { window.echarts.getInstanceByDom($('#lgChart')).resize(); } catch (e) {} });
+  try {
+    const i = await (await fetch('/api/v1/auth/info')).json();
+    if (i.demo_users && i.demo_users.length) {
+      $('#lgDemo').style.display = '';
+      $('#lgDemoList').innerHTML = i.demo_users.map(u => `<div class="lg-demo-row"><div><b>${u.name}</b><br><span class="mono">${u.user} / ${u.password}</span></div><button type="button" class="btn sm" data-u="${u.user}" data-p="${u.password}">${t('lg_demo_use')}</button></div>`).join('');
+      $$('#lgDemoList button').forEach(b => b.onclick = () => { $('#lgUser').value = b.dataset.u; $('#lgPass').value = b.dataset.p; $('#lgForm').requestSubmit(); });
+    }
+  } catch (e) { /* без демо-списка */ }
+}
+initLanding();
+
+fetch('/api/v1/stations').then(r => r.json()).then(list => { S.dash = initDash({ stations: list }); showView('A'); }).catch(() => { showView('A'); });
