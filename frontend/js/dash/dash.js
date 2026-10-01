@@ -150,12 +150,12 @@ function renderAlerts() {
   if (best) recs.push({ txt: `${t('alt_' + best.label)}: ${t('d_h_idx').toLowerCase()} ${best.index.score.toFixed(0)} (${best.delta_index >= 0 ? '+' : ''}${best.delta_index})`, act: best.id });
   const top = (f ? f.index.top : []).filter(x => x.loss >= 2).slice(0, 2);
   for (const x of top) recs.push({ txt: t('rc_' + x.key) });
-  if (!recs.length) h += `<div class="rec ok">${t('rc_ok')}</div>`;
-  for (const r of recs) h += `<div class="rec"><span>${r.txt}</span>${r.act ? `<button class="btn primary xs" data-apply="${r.act}">${t('d_apply')}</button>` : ''}</div>`;
+  if (!recs.length) h += `<div class="drec ok">${t('rc_ok')}</div>`;
+  for (const r of recs) h += `<div class="drec"><span>${r.txt}</span>${r.act ? `<button class="btn primary xs" data-apply="${r.act}">${t('d_apply')}</button>` : ''}</div>`;
   // конфликты
   h += `<div class="sech">${t('d_conf_sec')}</div>`;
   const shown = cs.filter(c => c.severity !== 'info' || cs.length < 6).slice(0, 14);
-  if (!cs.length) h += `<div class="rec ok">${t('d_no_conf')}</div>`;
+  if (!cs.length) h += `<div class="drec ok">${t('d_no_conf')}</div>`;
   for (const c of shown) {
     const ress = (c.resolutions || []).map((r, i) => {
       const label = t('rs_' + r.code, { ...r.params, res: t('d_res_' + (r.params.res || 'loco')) });
