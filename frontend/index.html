@@ -50,6 +50,8 @@
       <div class="sp"></div>
       <div class="dg" id="dIngest" title=""><span class="lbl" data-i18n="d_ingest"></span><span class="lbl num" id="dIngestTxt"></span></div>
       <div class="dg"><button class="btn sm" id="dPdf">PDF</button><button class="btn sm" id="dCsv">CSV</button></div>
+      <button class="btn sm" id="dNight" data-i18n="ho_night"></button>
+      <button class="btn sm" id="dHandover" data-i18n="ho_btn"></button>
       <button class="btn sm" id="dSettings" data-i18n="d_settings"></button>
       <button class="btn sm" id="dAuth"><span id="dRole"></span></button>
     </div>
@@ -252,6 +254,9 @@
 <div class="modal" id="fmModal"><div class="mbox" style="width:min(560px,94vw)">
   <div class="bar-t"><b data-i18n="d_formula_title"></b><button class="btn sm" data-close="fmModal" data-i18n="d_close"></button></div>
   <div class="mbody" id="fmBody"></div></div></div>
+<div class="modal" id="hoModal"><div class="mbox" style="width:min(600px,94vw)">
+  <div class="bar-t"><b data-i18n="ho_title"></b><button class="btn sm" data-close="hoModal" data-i18n="d_close"></button></div>
+  <div class="mbody" id="hoBody"></div></div></div>
 <div id="toasts"></div>
 <div class="modal" id="cctvModal">
   <div class="cctv">
@@ -266,7 +271,7 @@
   </div>
 </div>
 
-<footer data-i18n="footer"></footer>
+<footer><b class="disc" data-i18n="disclaimer"></b> <span data-i18n="footer"></span></footer>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

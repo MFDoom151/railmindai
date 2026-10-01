@@ -275,3 +275,19 @@ def test_open_demo_role():
     assert a.role_of(R()) == "viewer"
     a.open_demo = True
     assert a.role_of(R()) == "dispatcher"
+
+
+def test_handover_checklist_and_night():
+    c = TestClient(main.app)
+    ctx = c.get("/api/v1/stations/almaty1/handover").json()
+    assert set(ctx["items"]) >= {"shoes", "switches", "closures", "unsecured", "orders"} and "night" in ctx
+    h = {"Authorization": "Basic ZGlzcGF0Y2hlcjpkaXNwYXRjaGVy"}
+    all_ok = {k: True for k in ctx["items"]}
+    assert c.post("/api/v1/stations/almaty1/handover", json={"items": all_ok}).status_code == 401           # нужна роль
+    assert c.post("/api/v1/stations/almaty1/handover", json={"items": {"shoes": True}}, headers=h).status_code == 422   # неполный чек-лист
+    r = c.post("/api/v1/stations/almaty1/handover", json={"items": all_ok, "shoes_log": 12, "shoes_fact": 11}, headers=h)
+    assert r.status_code == 422 and r.json()["detail"]["error"] == "shoes_mismatch"                           # расхождение без пояснения
+    r = c.post("/api/v1/stations/almaty1/handover", json={"items": all_ok, "shoes_log": 12, "shoes_fact": 11, "note": "один башмак в депо"}, headers=h)
+    assert r.status_code == 200 and r.json()["mismatch"] is True
+    r = c.post("/api/v1/stations/almaty1/handover", json={"items": all_ok, "night": True}, headers=h)          # ночью — дополнительный пункт
+    assert r.status_code == 422 and "night_report" in r.json()["detail"]["missing"]

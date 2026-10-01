@@ -49,6 +49,19 @@ class ResolveIn(BaseModel):
     params: Dict[str, Any] = {}
 
 
+class HandoverIn(BaseModel):
+    items: Dict[str, bool] = {}
+    shoes_log: Optional[int] = Field(None, ge=0, le=999)
+    shoes_fact: Optional[int] = Field(None, ge=0, le=999)
+    note: str = Field("", max_length=500)
+    night: bool = False
+    user: str = Field("", max_length=64)
+
+
+HANDOVER_ITEMS = ("shoes", "switches", "closures", "unsecured", "orders")
+HANDOVER_NIGHT_ITEMS = ("night_report",)
+
+
 class SimCtl(BaseModel):
     paused: Optional[bool] = None
     scale: Optional[float] = Field(None, gt=0, le=20)
@@ -165,6 +178,33 @@ async def apply_plan(sid: str, body: ApplyIn):
     if not r.apply_alternative(body.alt_id):
         raise HTTPException(404, "alternative not found (expired or unknown)")
     return {"applied": body.alt_id, "plan_version": r.plan_version}
+
+
+@router.get("/api/v1/stations/{sid}/handover", tags=["safety"])
+async def get_handover(sid: str):
+    """Контекст сдачи дежурства: что принимает сменщик (текущие закрытия, конфликты, нештатные ситуации) и признак ночной смены."""
+    r = await HUB.get(_sid(sid))
+    now = r.state.now
+    closures = [{"track": c["track"], "until": round(c["to"], 1), "reason": c.get("reason")} for c in r.sim.closures if c["to"] > now]
+    return {"sim": round(now, 1), "night": 0 <= (int(now) % 1440) // 60 < 6, "closures": closures, "conflicts": len(r.conflicts),
+            "disruptions": len(r.sim.log), "plan_version": r.plan_version,
+            "items": list(HANDOVER_ITEMS), "night_items": list(HANDOVER_NIGHT_ITEMS)}
+
+
+@router.post("/api/v1/stations/{sid}/handover", tags=["safety"], dependencies=[require("dispatcher")])
+async def post_handover(sid: str, body: HandoverIn):
+    """Подтверждение сдачи дежурства. Все пункты чек-листа обязательны; расхождение инвентарных номеров башмаков требует пояснения."""
+    r = await HUB.get(_sid(sid))
+    need = list(HANDOVER_ITEMS) + (list(HANDOVER_NIGHT_ITEMS) if body.night else [])
+    missing = [k for k in need if not body.items.get(k)]
+    if missing:
+        raise HTTPException(422, {"error": "checklist_incomplete", "missing": missing})
+    mismatch = body.shoes_log is not None and body.shoes_fact is not None and body.shoes_log != body.shoes_fact
+    if mismatch and not body.note.strip():
+        raise HTTPException(422, {"error": "shoes_mismatch", "log": body.shoes_log, "fact": body.shoes_fact})
+    r.alert("warn" if mismatch else "ok", "HANDOVER", {"night": body.night, "shoes_log": body.shoes_log, "shoes_fact": body.shoes_fact,
+                                                      "mismatch": mismatch, "note": body.note.strip(), "user": body.user or "dispatcher"})
+    return {"ok": True, "mismatch": mismatch}
 
 
 @router.post("/api/v1/stations/{sid}/resolve", tags=["planning"], dependencies=[require("dispatcher")])

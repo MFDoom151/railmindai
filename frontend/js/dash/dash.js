@@ -102,7 +102,7 @@ function render() {
   D.renderQ = false; const f = curFrame(); if (!f || !D.infra) return;
   const live = D.replay == null;
   const plan = planAt(f.sim);
-  $('#dSimTime').textContent = hhmm(f.sim); $('#dPause').textContent = D.paused ? t('d_resume') : t('d_pause');
+  syncNight(); $('#dSimTime').textContent = hhmm(f.sim); $('#dPause').textContent = D.paused ? t('d_resume') : t('d_pause');
   // индекс и тренд
   const i1 = D.replay != null ? D.replay : D.ring.length - 1; const trend = D.ring.slice(Math.max(0, i1 - 150), i1 + 1).map(x => x.index.score);
   indexw.update(f.index, D.thr, trend);
@@ -247,6 +247,40 @@ function openFormula() {
   $('#fmModal').classList.add('on');
 }
 
+
+// ====================================================================================================================
+// сдача дежурства и ночной режим (человеческий фактор: резонансные случаи происходили ночью и при смене дежурства)
+const NORM_SHOES = 'п. 3.12 ТРА станции';
+function isNight() { return D.nightManual || (D.live && ((Math.floor(D.live.sim) % 1440) / 60 | 0) < 6); }
+function syncNight() {
+  const n = isNight(); document.body.classList.toggle('night', n); $('#dNight').classList.toggle('on', n);
+  const b = $('#dBanner'); if (b) { /* баннер перемотки не трогаем: ночь показывается подсветкой панели и кнопкой */ }
+}
+async function openHandover() {
+  if (!need()) return; const body = $('#hoBody'); $('#hoModal').classList.add('on');
+  let c; try { c = await api(`/api/v1/stations/${D.station}/handover`); } catch (e) { body.textContent = String(e.message); return; }
+  const night = isNight(); const keys = [...c.items, ...(night ? c.night_items : [])];
+  body.innerHTML = `${night ? `<div class="step no" style="margin-bottom:10px">${t('ho_night_banner')}</div>` : ''}
+    <div class="ho-ctx"><b>${t('ho_ctx')}</b><br>${t('ho_ctx_row', { c: c.closures.map(x => '№' + x.track).join(', ') || '0', k: c.conflicts, d: c.disruptions, v: c.plan_version })}</div>
+    ${keys.map(k => `<label class="ho-item"><input type="checkbox" data-k="${k}"><span>${t('ho_i_' + k)}${k === 'shoes' ? `<span class="norm" title="${t('norm_hint')}">${NORM_SHOES}</span>` : ''}</span></label>`).join('')}
+    <div class="ho-grid"><div class="field-l"><label>${t('ho_shoes_log')}</label><input class="inp" id="hoLog" type="number" min="0"></div>
+      <div class="field-l"><label>${t('ho_shoes_fact')}</label><input class="inp" id="hoFact" type="number" min="0"></div></div>
+    <div id="hoMM" class="step no" style="display:none"></div>
+    <div class="field-l"><label>${t('ho_note')}</label><input class="inp" id="hoNote" maxlength="500"></div>
+    <button class="btn primary" id="hoGo" style="width:100%;margin-top:6px">${t('ho_submit')}</button>`;
+  const mm = () => { const a = $('#hoLog').value, b = $('#hoFact').value, box = $('#hoMM'); const bad = a !== '' && b !== '' && +a !== +b; box.style.display = bad ? '' : 'none'; if (bad) box.textContent = t('ho_mismatch', { a, b }); return bad; };
+  $('#hoLog').oninput = $('#hoFact').oninput = mm;
+  $('#hoGo').onclick = async () => {
+    const items = {}; $$('#hoBody [data-k]').forEach(x => items[x.dataset.k] = x.checked);
+    if (!keys.every(k => items[k])) return toast(t('ho_incomplete'), 'warn');
+    const a = $('#hoLog').value, b = $('#hoFact').value;
+    try {
+      const r = await api(`/api/v1/stations/${D.station}/handover`, { method: 'POST', body: { items, night, shoes_log: a === '' ? null : +a, shoes_fact: b === '' ? null : +b, note: $('#hoNote').value, user: D.auth.user || '' } });
+      $('#hoModal').classList.remove('on'); toast(t(r.mismatch ? 'ho_done_mm' : 'ho_done'), r.mismatch ? 'warn' : 'ok', 5200);
+    } catch (e) { if (e.detail?.detail?.error === 'shoes_mismatch') mm(); toast(t(e.detail?.detail?.error === 'checklist_incomplete' ? 'ho_incomplete' : 'ho_mismatch', { a: e.detail?.detail?.log, b: e.detail?.detail?.fact }), 'warn', 6000); }
+  };
+}
+
 // ====================================================================================================================
 // перемотка
 function syncSlider() {
@@ -345,6 +379,7 @@ export function initDash({ stations }) {
   $('#dLive').onclick = goLive; $('#dPlay').onclick = togglePlay; $('#dSlider').oninput = onSlider;
   $('#dPdf').onclick = () => window.open(`/api/v1/stations/${D.station}/report.pdf?lang=${getLang()}`, '_blank');
   $('#dCsv').onclick = () => window.open(`/api/v1/stations/${D.station}/report.csv?lang=${getLang()}`, '_blank');
+  $('#dHandover').onclick = openHandover; $('#dNight').onclick = () => { D.nightManual = !D.nightManual; syncNight(); };
   $('#dSettings').onclick = openSettings; $('#dAuth').onclick = openAuth; $('#aGo').onclick = doLogin; $('#aLogout').onclick = logout;
   $('#aPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
   $$('[data-close]').forEach(b => b.onclick = () => $('#' + b.dataset.close).classList.remove('on'));

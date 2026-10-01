@@ -425,7 +425,11 @@ function drawDisGantt() {
 // ===================== безопасность =====================
 async function refreshLog() { try { const r = await api('/api/safety/log?limit=40'); S.backendLog = r.events; renderFeed(); } catch (e) { /* offline */ } }
 function pushLocal(level, text) { S.local.unshift({ ts: Date.now() / 1000, level, text, station: S.st ? S.st.id : null }); S.local = S.local.slice(0, 30); renderFeed(); }
-function evText(e) { const p = { ...e.params }; if (p.shoes) p.shoes = '№' + p.shoes.join(', №'); if (e.code === 'INTERLOCK_BLOCK') p.reasons = (p.reasons || []).map(c => t('rc_' + c)).join(' · '); return t('ev_' + e.code, p); }
+// Справочные ссылки на нормативную базу (по материалам актов расследования); задаются данными и правятся без изменения логики
+const NORM = { PROHIBITED_SIGNAL_MOVE: 'п. 372 гл. 11 ИДП', HOSTILE_ROUTE: 'п. 372 гл. 11 ИДП', SHOE_ON_RAIL: 'п. 3.12 ТРА станции; п. 23/32 долж. инструкции', UNSECURED: 'п. 390 гл. 11 ИДП; Приказ №445-ЦЗ' };
+const EV_NORM = { DEPARTURE_BLOCKED_SHOE: 'SHOE_ON_RAIL', SHOE_DETECTED: 'SHOE_ON_RAIL', DEPARTURE_BLOCKED_UNSECURED: 'UNSECURED', UNSECURED_DETECTED: 'UNSECURED' };
+const normTag = (code) => NORM[code] ? `<span class="norm" title="${t('norm_hint')}">${NORM[code]}</span>` : '';
+function evText(e) { const p = { ...e.params }; if (p.shoes) p.shoes = '№' + p.shoes.join(', №'); if (e.code === 'INTERLOCK_BLOCK') p.reasons = (p.reasons || []).map(c => t('rc_' + c)).join(' · '); const nc = EV_NORM[e.code] || (e.code === 'INTERLOCK_BLOCK' && (e.params.reasons || []).find(c => NORM[c])); return t('ev_' + e.code, p) + (nc ? ' ' + normTag(nc) : ''); }
 function renderFeed() {
   const all = [...S.backendLog.map(e => ({ ts: e.ts, level: e.level, text: evText(e), station: e.station })), ...S.local].sort((a, b) => b.ts - a.ts).slice(0, 40);
   const stn = (id) => { const s = S.net && S.net.stations.find(x => x.id === id); return s ? stName(s) : ''; };
@@ -441,7 +445,7 @@ function showAlert(title, text, ok = false) { const a = $('#alertBox'); a.classN
 function hideAlert() { $('#alertBox').style.display = 'none'; $('#btnRemove').style.display = 'none'; $('#btnSecure').style.display = 'none'; S.alertTrack = null; }
 function onShoeBlocked(track, r) {
   S.alertTrack = track; const shoe = (r.reasons[0] && r.reasons[0].shoes[0]) || 19;
-  showAlert(t('alert_title'), t('alert_shoe', { shoe, track })); $('#btnRemove').style.display = ''; $('#btnRemove').dataset.shoe = shoe;
+  showAlert(t('alert_title'), t('alert_shoe', { shoe, track }) + ' ' + normTag('SHOE_ON_RAIL')); $('#btnRemove').style.display = ''; $('#btnRemove').dataset.shoe = shoe;
   S.scene && S.scene.flashSignal('Ч' + track, 60000); refreshLog(); renderShoes(); refreshNetwork();
 }
 function onShoeUnblocked(track) { showAlert('✓', t('alert_ok', { track }), true); $('#btnRemove').style.display = 'none'; refreshLog(); renderShoes(); setTimeout(() => { if (S.alertTrack === null) hideAlert(); }, 4500); S.alertTrack = null; }
@@ -464,12 +468,12 @@ async function hostileScenario() {
     if (!S.st || S.st.id !== sid) return;
     const ok = s.result.allowed;
     const title = s.step === 'SWITCH_REQUEST' ? t('r_SWITCH_REQUEST_no', { switch: s.switch, pos: s.pos }) : ok ? t('r_ROUTE_REQUEST_ok', { route: s.route }) : t('r_ROUTE_REQUEST_no', { route: s.route });
-    const reasons = ok ? '' : '<ul>' + s.result.reasons.map(r => `<li>${t('c_' + r.code, { ...r, sections: (r.sections || []).join(', ') })}</li>`).join('') + '</ul>';
+    const reasons = ok ? '' : '<ul>' + s.result.reasons.map(r => `<li>${t('c_' + r.code, { ...r, sections: (r.sections || []).join(', ') })}${normTag(r.code)}</li>`).join('') + '</ul>';
     box.insertAdjacentHTML('beforeend', `<div class="step ${ok ? 'yes' : 'no'}"><b>${ok ? '✓' : '✗'}</b> ${title}${reasons}</div>`);
     if (ok) { sc.applyRoute(s.route); sc.setSignal('Н', 'GREEN'); }
     else {
       n++; const ids = new Set(); if (s.switch) ids.add(s.switch); const rt = sc.L.routes[s.route]; if (rt) Object.keys(rt.switches).forEach(k => ids.add(+k)); s.result.reasons.forEach(r => r.switch && ids.add(r.switch));
-      sc.flashSwitches([...ids], 5000); sc.flashSignal('Н', 5000); showAlert(t('saf_routes'), t('alert_hostile', { n }) + ' — ' + title);
+      sc.flashSwitches([...ids], 5000); sc.flashSignal('Н', 5000); showAlert(t('saf_routes'), t('alert_hostile', { n }) + ' ' + normTag('HOSTILE_ROUTE') + ' — ' + title);
     }
     refreshLog(); await sleep(1500);
   }
@@ -496,7 +500,7 @@ async function demoUnsecured() {
   const tr = sc.forceUnsecuredTrain(); if (!tr) return; S.unsecTrain = tr; const track = tr.track;
   await api('/api/safety/unsecured/inject', { station_id: S.st.id, track }); setLayer('iot');
   const tt = sc.byIdx[track]; sc.focus(tt.x1 - 25, tt.z, 70);
-  showAlert(t('alert_unsec'), t('alert_unsec_d', { track })); $('#btnSecure').style.display = ''; renderShoes(); refreshLog(); refreshNetwork();
+  showAlert(t('alert_unsec'), t('alert_unsec_d', { track }) + ' ' + normTag('UNSECURED')); $('#btnSecure').style.display = ''; renderShoes(); refreshLog(); refreshNetwork();
 }
 async function secureNow() {
   const tr = S.unsecTrain; if (!tr) return;
