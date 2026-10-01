@@ -117,8 +117,8 @@
           <div class="seg" id="layerSeg"><button data-layer="ops" class="on" data-i18n="layer_ops"></button><button data-layer="iot" data-i18n="layer_iot"></button><button data-layer="cctv" data-i18n="layer_cctv"></button></div>
           <div class="seg" id="camSeg"><button data-cam="persp" data-i18n="cam_persp"></button><button data-cam="top" data-i18n="cam_top"></button><button data-cam="orbit" data-i18n="cam_orbit"></button></div>
         </div>
-        <div class="overlay" id="profChip" style="left:12px;top:58px;padding:6px 10px;font-size:11.5px;color:var(--tx-2);max-width:min(560px,60%)"></div>
-        <div class="overlay" id="layerInfo" style="left:12px;top:112px;padding:6px 10px;font-size:11.5px;color:var(--tx-2);display:none"></div>
+        <div class="overlay" id="profChip" style="left:12px;top:52px;padding:4px 10px;font-size:11.5px;color:var(--tx-2);max-width:min(620px,60%);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        <div class="overlay" id="layerInfo" style="left:12px;top:84px;padding:6px 10px;font-size:11.5px;color:var(--tx-2);display:none"></div>
         <div class="overlay stats5" style="right:12px;bottom:12px">
           <div><div class="v num" id="hTrains">0</div><div class="l" data-i18n="hud_trains"></div></div>
           <div><div class="v num" id="hLocos">0</div><div class="l" data-i18n="hud_locos"></div></div>
@@ -126,7 +126,7 @@
           <div><div class="v num" id="hDone">0</div><div class="l" data-i18n="hud_done"></div></div>
           <div><div class="v num" id="hKm">0.0</div><div class="l" data-i18n="hud_km"></div></div>
         </div>
-        <div class="overlay" style="left:12px;bottom:12px;padding:6px 10px;font-size:11px;display:flex;gap:14px;flex-wrap:wrap;max-width:44%">
+        <div class="overlay" style="left:12px;bottom:10px;padding:4px 10px;font-size:10.5px;display:flex;gap:12px;white-space:nowrap;opacity:.9">
           <span class="lg-row"><i style="background:#5b8fc9;height:3px"></i><span data-i18n="k_reception"></span></span>
           <span class="lg-row"><i style="background:#8f8fb5;height:3px"></i><span data-i18n="k_sorting"></span></span>
           <span class="lg-row"><i style="background:#8795a8;height:3px"></i><span data-i18n="k_main"></span></span>
@@ -137,8 +137,8 @@
         <div id="loadVeil" style="position:absolute;inset:0;z-index:40;background:var(--bg);display:none;place-items:center;color:var(--mu)" data-i18n="loading"></div>
       </div>
 
-      <div class="panel res" id="resPanel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><h3 style="font-size:13px;font-weight:650" data-i18n="res_title"></h3><span class="lbl" data-i18n="res_sub"></span></div>
+      <div class="panel res compact" id="resPanel">
+        <div class="res-head" style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px"><h3 style="font-size:13px;font-weight:650" data-i18n="res_title"></h3><span class="lbl" data-i18n="res_sub"></span><button id="resToggle" class="btn" style="padding:2px 10px;font-size:11.5px"></button></div>
         <div class="res-grid" id="resGrid"></div>
       </div>
     </div>

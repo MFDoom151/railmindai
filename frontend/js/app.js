@@ -127,7 +127,8 @@ async function openStation(id) {
 }
 function renderProfile() {
   if (!S.st) return; const pr = S.st.meta.profile.problem;
-  $('#profChip').innerHTML = `<b>${t('prof_title')}:</b> <span style="color:var(--warn)">${t('prob_' + pr)}</span><br><span style="color:var(--mu)">${t('pd_' + pr)}</span>`;
+  const chip = $('#profChip'); chip.title = t('pd_' + pr);                 // подробности — во всплывающей подсказке
+  chip.innerHTML = `<b>${t('prof_title')}:</b> <span style="color:var(--warn)">${t('prob_' + pr)}</span> <span style="color:var(--mu)">· ${t('pd_' + pr)}</span>`;
 }
 function fillStationSelect() {
   const sel = $('#stSel'); if (!S.net) return;
@@ -188,7 +189,13 @@ async function pollTelemetry() {
 }
 setInterval(pollTelemetry, 1500);
 
+function syncResToggle() {
+  const p = $('#resPanel'), b = $('#resToggle'); if (!p || !b) return;
+  b.textContent = p.classList.contains('compact') ? t('res_more') : t('res_less');
+}
+$('#resToggle').addEventListener('click', () => { $('#resPanel').classList.toggle('compact'); syncResToggle(); setTimeout(() => window.dispatchEvent(new Event('resize')), 50); });
 function renderResources(a) {
+  syncResToggle();
   const grid = $('#resGrid'); const names = ['TRACK', 'LOCO', 'CREW', 'ROUTE'];
   if (!a) { grid.innerHTML = names.map(k => `<div class="tile"><div class="nm">${t('rs_' + k)}</div><div class="big num">–</div></div>`).join('') + `<div class="diag"><div class="t">${t('diag_title')}</div></div>`; return; }
   const sc = { ok: 'var(--ok)', tight: 'var(--warn)', deficit: 'var(--crit)' };

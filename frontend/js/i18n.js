@@ -70,6 +70,8 @@ const D = {
   k_depot: R('Депо ЧМЭ3', 'ЧМЭ3 депосы', 'ChME3 depot'),
   // --- ресурсы ---
   res_title: R('Согласование ресурсов станции', 'Станция ресурстарын келістіру', 'Station resource coordination'),
+  res_more: R('Подробнее', 'Толығырақ', 'Details'),
+  res_less: R('Свернуть', 'Жасыру', 'Collapse'),
   res_sub: R('Маневр возможен, только если согласованы все четыре ресурса', 'Маневр төрт ресурс та келісілгенде ғана мүмкін', 'A shunting move needs all four resources at once'),
   rs_TRACK: R('Путевая ёмкость', 'Жол сыйымдылығы', 'Track capacity'),
   rs_LOCO: R('Маневровые локомотивы', 'Маневрлік локомотивтер', 'Shunting locomotives'),

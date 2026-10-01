@@ -150,6 +150,8 @@ export class StationScene {
     const w = this.el.clientWidth || 800, h = this.el.clientHeight || 500;
     this.renderer.setSize(w, h, false); this.renderer.domElement.style.width = w + 'px'; this.renderer.domElement.style.height = h + 'px';
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+    // пока пользователь не двигал камеру вручную, станция всегда целиком в кадре при любом размере окна
+    if (!this.userCam && this.camMode && this.camMode !== 'orbit' && this.L) this.setCamera(this.camMode);
   }
 
   // ---------- камера и выбор объектов ----------
@@ -159,7 +161,7 @@ export class StationScene {
     el.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, pan: e.button === 2 || e.shiftKey }; el.setPointerCapture(e.pointerId); });
     el.addEventListener('pointermove', e => {
       if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; const c = this.cam;
-      if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 4) { c.auto = false; c.goal = null; }
+      if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 4) { c.auto = false; c.goal = null; this.userCam = true; }
       if (drag.pan) { const k = c.r * 0.0016, rx = Math.cos(c.theta), rz = -Math.sin(c.theta), fx = -Math.sin(c.theta), fz = -Math.cos(c.theta); c.tx += -rx * dx * k + fx * dy * k; c.tz += -rz * dx * k + fz * dy * k; }
       else if (!c.goal) { c.theta -= dx * 0.005; c.phi = Math.max(0.05, Math.min(1.5, c.phi - dy * 0.005)); }
     });
@@ -167,7 +169,7 @@ export class StationScene {
       const moved = drag && Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 4; drag = null;
       if (!moved) this._pick(e);
     });
-    el.addEventListener('wheel', e => { e.preventDefault(); this.cam.r = Math.max(30, Math.min(420, this.cam.r * (e.deltaY > 0 ? 1.1 : 0.9))); this.cam.goal = null; }, { passive: false });
+    el.addEventListener('wheel', e => { e.preventDefault(); this.userCam = true; this.cam.r = Math.max(30, Math.min(420, this.cam.r * (e.deltaY > 0 ? 1.1 : 0.9))); this.cam.goal = null; }, { passive: false });
   }
   _pick(e) {
     if (this.layer === 'ops' || !this.pickables.length) return;
@@ -177,16 +179,17 @@ export class StationScene {
     const hit = this.ray.intersectObjects(this.pickables.filter(o => o.parent && o.parent.visible), false)[0];
     if (hit && hit.object.userData.item) this.hooks.onPick && this.hooks.onPick(hit.object.userData.item, e);
   }
-  fitR() { return Math.max(90, Math.min(300, 92 / (0.384 * this.camera.aspect))); }
+  fitR() { return Math.max(70, Math.min(300, 92 / (0.384 * this.camera.aspect))); }
   setCamera(mode) {
     const c = this.cam, R = this.fitR();
+    this.camMode = mode; this.userCam = false;
     if (mode === 'top') c.goal = { theta: 0, phi: 0.06, r: R * 0.9, tx: 0, tz: 13 };
     else if (mode === 'persp') c.goal = { theta: 0.1, phi: 0.72, r: R, tx: -4, tz: 11 };
     else if (mode === 'close') c.goal = { theta: -0.55, phi: 0.6, r: R * 0.62, tx: -35, tz: 12 };
     c.auto = mode === 'orbit' ? !c.auto : false;
     if (mode === 'orbit' && c.auto) c.goal = { theta: c.theta, phi: 0.7, r: R * 1.05, tx: -4, tz: 11 };
   }
-  focus(x, z, r = 50) { this.cam.auto = false; this.cam.goal = { theta: -0.4, phi: 0.7, r, tx: x, tz: z }; }
+  focus(x, z, r = 50) { this.userCam = true; this.cam.auto = false; this.cam.goal = { theta: -0.4, phi: 0.7, r, tx: x, tz: z }; }
   _updateCam(dt) {
     const c = this.cam;
     if (c.goal) {
@@ -233,7 +236,7 @@ export class StationScene {
     if (sort.length) this.spawnStatic(sort[sort.length - 1].idx, 'sorted');
     if (safety && safety.shoes) for (const s of safety.shoes) this.addShoe(s.id, s.track, false);
     this.cam.theta = 0; this.cam.phi = 1.0; this.cam.r = this.fitR() * 1.15; this.cam.tx = -4; this.cam.tz = 11; this.cam.auto = false;
-    this.cam.goal = { theta: 0.12, phi: 0.72, r: this.fitR(), tx: -4, tz: 11 };
+    this.camMode = "persp"; this.userCam = false; this.cam.goal = { theta: 0.12, phi: 0.72, r: this.fitR(), tx: -4, tz: 11 };
   }
 
   _buildStatic() {
