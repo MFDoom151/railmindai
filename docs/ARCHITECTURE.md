@@ -74,7 +74,7 @@
 
 ## 8. Наблюдаемость
 
-`/health`, `/ready`, `/metrics` (Prometheus): тики и их длительность, `railtwin_replan_seconds{stage}`, события ingest (received/applied/invalid/duplicates/stale),
+`/health`, `/ready`, `/metrics` (Prometheus): тики и их длительность, `railmind_replan_seconds{stage}`, события ingest (received/applied/invalid/duplicates/stale),
 p95 задержки конвейера, лаг цикла событий, число WS-клиентов и сброшенных кадров, индекс и конфликты по станциям. Логи — JSON (`slow_tick`, `replan`).
 
 ## 9. Ограничения прототипа (честно)

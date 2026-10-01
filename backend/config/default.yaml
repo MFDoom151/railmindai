@@ -76,7 +76,7 @@ conflicts:
 storage:
   history_interval_s: 5      # шаг записи снимков в БД
   retention_h: 72            # срок хранения истории
-  db_path: data/railtwin.db
+  db_path: data/railmind.db
   replay_buffer_s: 900       # перемотка в памяти: последние 15 минут
 
 platforms:                   # число пассажирских платформенных путей (первые приёмо-отправочные)

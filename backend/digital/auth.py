@@ -19,7 +19,7 @@ from typing import Dict, Optional
 
 from fastapi import Depends, HTTPException, Request, WebSocket
 
-LOG = logging.getLogger("railtwin")
+LOG = logging.getLogger("railmind")
 RANK = {"viewer": 0, "dispatcher": 1, "admin": 2}
 TTL = 8 * 3600
 

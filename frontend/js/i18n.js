@@ -5,7 +5,7 @@ try { lang = localStorage.getItem('rt_lang') || 'ru'; } catch (e) {}
 const R = (ru, kz, en) => ({ ru, kz, en });
 
 const D = {
-  title: R('KTZ RailTwin KZ — «Цифровая станция»: ИИ-планирование и оптимизация работы станции', 'KTZ RailTwin KZ — «Цифрлық станция»: станция жұмысын ЖИ-жоспарлау және оңтайландыру', 'KTZ RailTwin KZ — Digital Station: AI planning & optimization'),
+  title: R('RailMind AI — «Цифровая станция»: ИИ-планирование и оптимизация работы станции', 'RailMind AI — «Цифрлық станция»: станция жұмысын ЖИ-жоспарлау және оңтайландыру', 'RailMind AI — Digital Station: AI planning & optimization'),
   sub: R('Ситуационный центр · маневровая работа и станционные ресурсы', 'Жағдайлық орталық · маневрлік жұмыс және станция ресурстары', 'Situation centre · shunting operations and station resources'),
   st_anylogic: R('AnyLogic Cloud API', 'AnyLogic Cloud API', 'AnyLogic Cloud API'),
   st_iot: R('IoT Sensors', 'IoT Sensors', 'IoT Sensors'),

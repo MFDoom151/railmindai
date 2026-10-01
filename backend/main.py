@@ -1,4 +1,4 @@
-"""RailTwin KZ — FastAPI бэкенд (B2G API) + раздача SPA."""
+"""RailMind AI — FastAPI бэкенд (B2G API) + раздача SPA."""
 import math
 import time
 import zlib
@@ -47,7 +47,7 @@ async def lifespan(app_):
     await HUB.stop()
 
 
-app = FastAPI(title="RailTwin KZ — Цифровая станция API", version="3.0", description=DESCRIPTION, openapi_tags=TAGS, lifespan=lifespan)
+app = FastAPI(title="RailMind AI — API цифровой станции", version="3.0", description=DESCRIPTION, openapi_tags=TAGS, lifespan=lifespan)
 app.include_router(digital_api.router)
 
 

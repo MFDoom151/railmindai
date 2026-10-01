@@ -30,7 +30,7 @@ from .simulator import Simulator, add_noise
 from .state import StationState
 from .store import Store
 
-LOG = logging.getLogger("railtwin")
+LOG = logging.getLogger("railmind")
 POOL = ThreadPoolExecutor(max_workers=3, thread_name_prefix="planner")
 HARD = {"TRACK_OVERLAP", "TRACK_CLOSED", "ROUTE_CONFLICT", "LOCO_CONFLICT", "LOCO_UNAVAILABLE", "CREW_SHORTAGE", "ETA_SHIFT", "UNPLANNED"}
 RESOURCE_KINDS = {"loco_down", "crew_absent"}
@@ -182,7 +182,7 @@ class StationRuntime:
             msg = {"type": "plan", "st": self.sid, "plan": plan.to_dict(), "sim": round(self.state.now, 1)}
             self.broadcast(msg)
             self.store.plan(self.sid, time.time(), self.state.now, plan.version, plan.label, {**plan.kpi, "solver": plan.solver})
-            METRICS.inc("railtwin_plans_total", station=self.sid, engine=plan.solver.get("engine", "?"))
+            METRICS.inc("railmind_plans_total", station=self.sid, engine=plan.solver.get("engine", "?"))
         return plan
 
     # ------------------------------------------------------------------------------------------------------------
@@ -255,7 +255,7 @@ class StationRuntime:
                 self.last_plan_ms["quick"] = round((time.perf_counter() - t0) * 1000, 1)
                 if prev_bad:
                     self._adopt(quick, inp, label="quick")
-                    METRICS.observe("railtwin_replan_seconds", time.perf_counter() - t_req, stage="quick")
+                    METRICS.observe("railmind_replan_seconds", time.perf_counter() - t_req, stage="quick")
                 if self.cfg.planner.engine == "cpsat":
                     plan = await loop.run_in_executor(POOL, solve, inp, P, self.plan or prev, "optimal")
                 else:
@@ -264,7 +264,7 @@ class StationRuntime:
                 cf = validate_plan(inp, plan, P, self.cfg.conflicts)
                 if not any(c["type"] in HARD for c in cf):
                     self._adopt(plan, inp, label=f"replan:{reason}")
-                METRICS.observe("railtwin_replan_seconds", time.perf_counter() - t_req, stage="optimal")
+                METRICS.observe("railmind_replan_seconds", time.perf_counter() - t_req, stage="optimal")
             self.block_until = time.time() + 2.0
             LOG.info("replan", extra={"station": self.sid, "event": "replan", "reason": reason, "ms": round((time.perf_counter() - t_req) * 1000)})
         except Exception:                                                              # pragma: no cover
@@ -298,7 +298,7 @@ class StationRuntime:
         self.alts = {"type": "alternatives", "st": self.sid, "set": alt_set, "stage": "quick", "disruptions": disruptions, "baseline": base_info,
                      "alts": [quick_info], "t_quick_ms": round(t_quick, 1), "sim": round(self.state.now, 1), "applied": None}
         self.broadcast(self.alts)
-        METRICS.observe("railtwin_replan_seconds", time.perf_counter() - t_req, stage="alt_quick")
+        METRICS.observe("railmind_replan_seconds", time.perf_counter() - t_req, stage="alt_quick")
         # 3) варианты CP-SAT — параллельно
         variants = [("min_delay", inp, P, prev),
                     ("min_change", inp, replace(P, w_change=60.0, w_wait=0.3), prev),
@@ -333,7 +333,7 @@ class StationRuntime:
         self.alts = {"type": "alternatives", "st": self.sid, "set": alt_set, "stage": "final", "disruptions": disruptions, "baseline": base_info, "alts": uniq,
                      "t_quick_ms": round(t_quick, 1), "t_total_ms": round((time.perf_counter() - t_req) * 1000, 1), "sim": round(self.state.now, 1), "applied": None}
         self.broadcast(self.alts)
-        METRICS.observe("railtwin_replan_seconds", time.perf_counter() - t_req, stage="alt_final")
+        METRICS.observe("railmind_replan_seconds", time.perf_counter() - t_req, stage="alt_final")
         self.store.event(self.sid, time.time(), self.state.now, "ALTERNATIVES", {"set": alt_set, "n": len(uniq), "ms": self.alts["t_total_ms"], "best": best["label"],
                                                                                   "best_index": best["index"]["score"], "base_index": base_idx["score"]})
         if self.auto_apply:
@@ -397,7 +397,7 @@ class StationRuntime:
         self.ingest.flush(force=True)
         self.disruptions.append({**info, "wall": time.time(), "source": source})
         self.alert("warn", "DISRUPTION", {k: v for k, v in info.items() if k != "events"})
-        METRICS.inc("railtwin_disruptions_total", kind=kind, station=self.sid)
+        METRICS.inc("railmind_disruptions_total", kind=kind, station=self.sid)
         inp, P = self.update_derived()
         self.publish_conflicts(inp, P)
         self.request_replan("disruption", alts=True, disruption={"kind": kind, **{k: v for k, v in info.items() if k not in ("kind", "events")}})
@@ -432,7 +432,7 @@ class StationRuntime:
             self.ingest.push(evs)
             self.disruptions.append({**info, "wall": time.time(), "source": "stress"})
             self.alert("warn", "DISRUPTION", {k2: v for k2, v in info.items() if k2 != "events"})
-            METRICS.inc("railtwin_disruptions_total", kind=k, station=self.sid)
+            METRICS.inc("railmind_disruptions_total", kind=k, station=self.sid)
             out.append({k2: v for k2, v in info.items() if k2 != "events"})
         self.ingest.flush(force=True)
         inp, P = self.update_derived()
@@ -491,12 +491,12 @@ class StationRuntime:
                 await asyncio.sleep(self.cfg.ingest.reorder_window_ms / 1000.0)      # окно переупорядочивания
                 self.publish_phase()
             self.tick_ms = (time.perf_counter() - t0) * 1000
-            METRICS.observe("railtwin_tick_seconds", self.tick_ms / 1000, station=self.sid)
+            METRICS.observe("railmind_tick_seconds", self.tick_ms / 1000, station=self.sid)
             want = max(0.0, interval - (time.perf_counter() - t0))
             t1 = time.perf_counter()
             await asyncio.sleep(want)
             lag = (time.perf_counter() - t1) - want                    # насколько цикл событий опоздал с пробуждением
-            METRICS.set("railtwin_loop_lag_seconds", round(lag, 4), station=self.sid)
+            METRICS.set("railmind_loop_lag_seconds", round(lag, 4), station=self.sid)
             if lag > 0.25 or self.tick_ms > 250:
                 LOG.warning("slow tick", extra={"station": self.sid, "event": "slow_tick", "ms": round(self.tick_ms), "reason": f"lag={lag:.2f}s phases={self.phase_ms}"})
 
@@ -533,9 +533,9 @@ class StationRuntime:
         for cl in list(self.clients):
             cl.put(s)
         self.frames.append(frame)
-        METRICS.set("railtwin_index", self.index["score"], station=self.sid)
-        METRICS.set("railtwin_conflicts", len(self.conflicts), station=self.sid)
-        METRICS.set("railtwin_stale_trains", stale, station=self.sid)
+        METRICS.set("railmind_index", self.index["score"], station=self.sid)
+        METRICS.set("railmind_conflicts", len(self.conflicts), station=self.sid)
+        METRICS.set("railmind_stale_trains", stale, station=self.sid)
         now = time.time()
         if now - self.last_snapshot >= c.storage.history_interval_s:
             self.last_snapshot = now

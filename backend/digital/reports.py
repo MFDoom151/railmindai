@@ -50,7 +50,7 @@ def build_csv(rt: StationRuntime, lang: str = "ru") -> str:
     out = io.StringIO()
     w = csv.writer(out, delimiter=";")
     L = T.get(lang, T["ru"])
-    w.writerow(["# railtwin report", rt.sid, _name(rt, lang), time.strftime("%Y-%m-%d %H:%M:%S"), "sim", hhmm(rt.state.now)])
+    w.writerow(["# railmind report", rt.sid, _name(rt, lang), time.strftime("%Y-%m-%d %H:%M:%S"), "sim", hhmm(rt.state.now)])
     w.writerow([])
     w.writerow(["# index", "score", "category", "letter"])
     w.writerow(["", rt.index.get("score"), rt.index.get("category"), rt.index.get("letter")])

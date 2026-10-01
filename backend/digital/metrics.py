@@ -8,7 +8,7 @@ import time
 from collections import defaultdict
 from typing import Dict, Tuple
 
-LOG = logging.getLogger("railtwin")
+LOG = logging.getLogger("railmind")
 
 
 def setup_logging(level="INFO"):
@@ -21,7 +21,7 @@ def setup_logging(level="INFO"):
             return json.dumps(d, ensure_ascii=False)
     h = logging.StreamHandler()
     h.setFormatter(J())
-    root = logging.getLogger("railtwin")
+    root = logging.getLogger("railmind")
     root.handlers[:] = [h]
     root.setLevel(level)
     root.propagate = False
@@ -74,7 +74,7 @@ class Metrics:
         return "{" + ",".join(f'{k}="{v}"' for k, v in labels) + "}" if labels else ""
 
     def render(self) -> str:
-        out = [f"# TYPE railtwin_uptime_seconds gauge\nrailtwin_uptime_seconds {time.time() - self.started:.1f}"]
+        out = [f"# TYPE railmind_uptime_seconds gauge\nrailmind_uptime_seconds {time.time() - self.started:.1f}"]
         with self.lock:
             seen = set()
             for (n, l), v in sorted(self.counters.items()):

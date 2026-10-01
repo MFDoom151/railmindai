@@ -86,14 +86,14 @@ async def metrics():
     for sid, r in HUB.rt.items():
         s = r.ingest.stats()
         for k in ("received", "applied", "invalid", "duplicates", "stale"):
-            METRICS.set(f"railtwin_ingest_{k}", s.get(k, 0), station=sid)
-        METRICS.set("railtwin_ws_clients", len(r.clients), station=sid)
-        METRICS.set("railtwin_replanning", int(r.replanning), station=sid)
-        METRICS.set("railtwin_ingest_latency_ms_p95", s.get("latency_ms_p95", 0), station=sid)
-        METRICS.set("railtwin_ws_dropped_frames", sum(c.dropped for c in r.clients), station=sid)
+            METRICS.set(f"railmind_ingest_{k}", s.get(k, 0), station=sid)
+        METRICS.set("railmind_ws_clients", len(r.clients), station=sid)
+        METRICS.set("railmind_replanning", int(r.replanning), station=sid)
+        METRICS.set("railmind_ingest_latency_ms_p95", s.get("latency_ms_p95", 0), station=sid)
+        METRICS.set("railmind_ws_dropped_frames", sum(c.dropped for c in r.clients), station=sid)
     if HUB.store:
-        METRICS.set("railtwin_store_written", HUB.store.written)
-        METRICS.set("railtwin_store_dropped", HUB.store.dropped)
+        METRICS.set("railmind_store_written", HUB.store.written)
+        METRICS.set("railmind_store_dropped", HUB.store.dropped)
     return METRICS.render()
 
 
@@ -328,7 +328,7 @@ async def ws_stream(ws: WebSocket, station: str, backfill: int = 450):
     r = await HUB.get(station)
     q = ClientQueue()
     r.clients.add(q)
-    METRICS.inc("railtwin_ws_connections_total", station=station)
+    METRICS.inc("railmind_ws_connections_total", station=station)
     try:
         for m in r.hello(min(max(backfill, 0), 1800)):
             await ws.send_text(m)

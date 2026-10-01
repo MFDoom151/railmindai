@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 
-TMP = tempfile.mkdtemp(prefix="railtwin_test_")
+TMP = tempfile.mkdtemp(prefix="railmind_test_")
 os.environ["RAILTWIN_DB_PATH"] = os.path.join(TMP, "t.db")
 os.environ["RAILTWIN_CONFIG_OVERRIDE"] = os.path.join(TMP, "override.yaml")
 os.environ.setdefault("RAILTWIN_DEV", "1")
@@ -215,7 +215,7 @@ def test_api_end_to_end():
         assert "# index" in c.get("/api/v1/stations/kopa/report.csv").text
         # метрики
         m = c.get("/metrics").text
-        assert "railtwin_replan_seconds_count" in m and "railtwin_index" in m
+        assert "railmind_replan_seconds_count" in m and "railmind_index" in m
         # история и события
         time.sleep(0.5)
         assert c.get("/api/v1/stations/kopa/events?minutes=10").json()["events"]

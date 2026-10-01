@@ -261,7 +261,7 @@ function renderSim() {
   if (!over) v.textContent = '✓ ' + t('r_verdict_ok');
   else if (res.bottleneck === 'crew') { const better = sweep.find(x => x.thr > res.throughput * 1.08 && x.crews > dp.crews); v.textContent = '⚠ ' + t('r_verdict_crew') + (better ? ` ${better.crews} → ${better.thr.toFixed(0)} ${t('u_day')}` : ''); }
   else v.textContent = '⚠ ' + t(res.bottleneck === 'loco' ? 'r_verdict_loco' : 'r_verdict_track');
-  $('#apiJson').textContent = JSON.stringify({ POST: '/anylogic-cloud/emu/experiments/run', model: 'RailTwinKZ_Shunting_DES', station: S.st.id, inputs: { arrival_rate_per_h: dp.lambda, shunting_locos: dp.locos, shunting_crews: dp.crews, process_time_min: dp.proc, reception_tracks: dp.recv, sorting_tracks: dp.sort, horizon_h: 24, replications: 24 }, outputs: { throughput_per_day: +res.throughput.toFixed(1), ci95: +res.ci95.toFixed(1), capacity_per_day: +res.capacity.toFixed(0) } }, null, 1);
+  $('#apiJson').textContent = JSON.stringify({ POST: '/anylogic-cloud/emu/experiments/run', model: 'RailMindAI_Shunting_DES', station: S.st.id, inputs: { arrival_rate_per_h: dp.lambda, shunting_locos: dp.locos, shunting_crews: dp.crews, process_time_min: dp.proc, reception_tracks: dp.recv, sorting_tracks: dp.sort, horizon_h: 24, replications: 24 }, outputs: { throughput_per_day: +res.throughput.toFixed(1), ci95: +res.ci95.toFixed(1), capacity_per_day: +res.capacity.toFixed(0) } }, null, 1);
   drawSimCharts();
 }
 function chart(id) { const el = document.getElementById(id); let c = S.charts[id]; if (!c || c.getDom() !== el) { if (c) c.dispose(); c = echarts.init(el, null, { renderer: 'canvas' }); S.charts[id] = c; } return c; }

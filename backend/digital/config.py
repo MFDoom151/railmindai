@@ -88,7 +88,7 @@ class ConflictsCfg(BaseModel):
 class StorageCfg(BaseModel):
     history_interval_s: float = Field(5, ge=0.5)
     retention_h: float = Field(72, ge=1, le=720)
-    db_path: str = "data/railtwin.db"
+    db_path: str = "data/railmind.db"
     replay_buffer_s: int = Field(900, ge=60, le=3600)
 
 
